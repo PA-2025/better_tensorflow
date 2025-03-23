@@ -5,3 +5,8 @@ target/
 
 **/*.rs.bk
 *.pdb
+
+temp.mp3
+
+python/api/__pycache__/
+python/better_tensorflow/__pycache__/
