@@ -1,7 +1,8 @@
 use pyo3::prelude::*;
 mod activation_function;
 mod mlp;
-
+mod data_manager;
+mod data_converter;
 
 #[pyfunction]
 fn predict_perceptron(input: Vec<Vec<f32>>) -> PyResult<i32> {

@@ -1,4 +1,5 @@
 use crate::activation_function;
+use crate::data_converter;
 use rand::Rng;
 
 pub fn init_weights(dim: i32) -> Vec<f32> {
@@ -30,6 +31,10 @@ pub fn matrix_to_array(matrix: Vec<Vec<f32>>) -> Vec<f32> {
 pub fn predict(matrix: Vec<Vec<f32>>) -> i32 {
     let layers: Vec<i32> = vec![(matrix.len() * matrix[0].len()) as i32, 4, 5, 7, 3];
     let all_layers = init_layers(layers);
+    // let all_layers = data_converter::load_weights_mlp();
+    println!("{}",all_layers.len());
+    println!("{}",all_layers[0].len());
+    println!("{}",all_layers[0][0].len());
     let mut results_layer: Vec<Vec<i32>> = vec![];
     for layers_index in 0..all_layers.len() {
         let mut result_neural = vec![];
@@ -50,6 +55,7 @@ pub fn predict(matrix: Vec<Vec<f32>>) -> i32 {
         }
         results_layer.push(result_neural);
     }
+    data_converter::export_weights_mlp(all_layers);
     let mut index_good_neural: i32 = 0;
     for index_neural in 0..results_layer.last().unwrap().len() {
         if results_layer.last().unwrap()[index_neural] == 1 {
