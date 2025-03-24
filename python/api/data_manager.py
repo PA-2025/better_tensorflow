@@ -1,4 +1,5 @@
 import librosa
+from librosa.util import fix_length
 from typing import List
 import os
 
@@ -7,6 +8,7 @@ class DataManager:
     @staticmethod
     def load_dataset(dataset_path: str) -> List[List]:
         dataset = []
+        shape = 128 * 128
         folders = os.listdir(dataset_path)
         for folder in folders:
             files = os.listdir(dataset_path + folder)
@@ -18,6 +20,7 @@ class DataManager:
                 mel_spectrogram = librosa.feature.melspectrogram(
                     y=audio_data, sr=sample_rate
                 )
+                mel_spectrogram = fix_length(mel_spectrogram, size=shape)
                 cat_dataset.append(mel_spectrogram)
             dataset.append(cat_dataset)
         return dataset
