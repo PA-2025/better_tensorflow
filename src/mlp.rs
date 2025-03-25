@@ -46,13 +46,74 @@ pub fn back_propagation(
     output: Vec<f32>,
     all_layers: Vec<Vec<Vec<f32>>>,
     result_fastforward: Vec<Vec<f32>>,
+    input_data: Vec<f32>,
 ) -> Vec<Vec<Vec<f32>>> {
     let mut updated_layers = all_layers.clone();
-    let learning_rate = 0.01;
 
+    for layers_index in (0..all_layers.len()).rev() {
+        for neural_index in 0..all_layers[layers_index].len() {
+            if layers_index == all_layers.len() - 1 {
+                let mut o = vec![];
+                for i in 0..result_fastforward[layers_index - 1].len() {
+                    o.push(result_fastforward[layers_index - 1][i]);
+                }
+                updated_layers[layers_index][neural_index] = update_weight(
+                    updated_layers[layers_index][neural_index].clone(),
+                    output.clone(),
+                    o,
+                    result_fastforward[layers_index][neural_index],
+                );
+            } else if layers_index == 0 {
+                let mut a = vec![];
+                for i in 0..result_fastforward[layers_index + 1].len() {
+                    a.push(result_fastforward[layers_index + 1][i]);
+                }
+                updated_layers[layers_index][neural_index] = update_weight(
+                    updated_layers[layers_index][neural_index].clone(),
+                    a,
+                    input_data.clone(),
+                    result_fastforward[layers_index][neural_index],
+                );
+            } else {
+                let mut a = vec![];
+                let mut o = vec![];
+                for i in 0..result_fastforward[layers_index + 1].len() {
+                    a.push(result_fastforward[layers_index + 1][i]);
+                }
+                for i in 0..result_fastforward[layers_index - 1].len() {
+                    o.push(result_fastforward[layers_index - 1][i]);
+                }
+                updated_layers[layers_index][neural_index] = update_weight(
+                    updated_layers[layers_index][neural_index].clone(),
+                    a,
+                    o,
+                    result_fastforward[layers_index][neural_index],
+                );
+            }
+        }
+    }
 
     updated_layers
 }
+
+pub fn update_weight(
+    w: Vec<f32>,
+    y: Vec<f32>,
+    values_before_w: Vec<f32>,
+    result_w_x_values_before_w: f32,
+) -> Vec<f32> {
+    let mut updated_w = w.clone();
+    let learning_rate = 0.01;
+    for i in 0..w.len() {
+        for j in 0..y.len() {
+            let gradient = (result_w_x_values_before_w - y[j]) * values_before_w[i];
+            updated_w[i] -= learning_rate * gradient;
+        }
+    }
+
+    updated_w
+}
+
 pub fn predict(matrix: Vec<Vec<f32>>) -> i32 {
     let all_layers = data_converter::load_weights_mlp();
     let mut results_layer = forward_propagation(all_layers.clone(), matrix);
@@ -105,8 +166,12 @@ pub fn training(dataset: Vec<Vec<Vec<Vec<f32>>>>, nb_epoch: i32, hidden_layers: 
                     result_layers.last().unwrap().clone(),
                     need_result_output_neural.clone(),
                 );
-                all_layers =
-                    back_propagation(need_result_output_neural.clone(), all_layers, result_layers);
+                all_layers = back_propagation(
+                    need_result_output_neural.clone(),
+                    all_layers,
+                    result_layers,
+                    matrix::matrix_to_array(dataset[index_cat][index_data].clone()),
+                );
             }
         }
     }
