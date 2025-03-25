@@ -2,6 +2,7 @@ from fastapi import FastAPI, UploadFile
 from typing import List
 import better_tensorflow as btf
 import os
+import json
 from data_manager import DataManager
 
 app = FastAPI()
@@ -15,7 +16,11 @@ async def predict_mlp(file: UploadFile):
     data = DataManager.load_data("temp.mp3")
     prediction = btf.predict_mlp(data)
 
-    return {"prediction": prediction}
+    f = open("dataset.txt", "r")
+    cat = json.loads(f.read())
+    f.close()
+
+    return {"prediction": cat[prediction]}
 
 
 @app.post("/train_mlp")
