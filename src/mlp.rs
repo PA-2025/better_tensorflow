@@ -1,9 +1,9 @@
 use crate::activation_function;
 use crate::data_converter;
+use crate::data_manager;
 use crate::loss;
 use crate::matrix;
 use rand::Rng;
-use std::process::Output;
 
 pub fn init_weights(dim: i32) -> Vec<f32> {
     let mut w = vec![];
@@ -141,7 +141,12 @@ pub fn init_layers(nb_layers: Vec<i32>) -> Vec<Vec<Vec<f32>>> {
     all_random_weights
 }
 
-pub fn training(dataset: Vec<Vec<Vec<Vec<f32>>>>, nb_epoch: i32, hidden_layers: Vec<i32>) {
+pub fn training(
+    dataset: Vec<Vec<Vec<Vec<f32>>>>,
+    nb_epoch: i32,
+    hidden_layers: Vec<i32>,
+    training_name: String,
+) {
     let mut layers: Vec<i32> = vec![(dataset[0][0].len() * dataset[0][0][0].len()) as i32];
     for i in 0..hidden_layers.len() {
         layers.push(hidden_layers[i]);
@@ -166,6 +171,8 @@ pub fn training(dataset: Vec<Vec<Vec<Vec<f32>>>>, nb_epoch: i32, hidden_layers: 
                     result_layers.last().unwrap().clone(),
                     need_result_output_neural.clone(),
                 );
+                data_manager::add_text_to_file(training_name.clone(), mse.to_string() + "\n")
+                    .expect("Error: error during write train data");
                 all_layers = back_propagation(
                     need_result_output_neural.clone(),
                     all_layers,

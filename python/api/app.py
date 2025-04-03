@@ -1,11 +1,23 @@
 from fastapi import FastAPI, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from typing import List
 import better_tensorflow as btf
 import os
 import json
 from data_manager import DataManager
+from datetime import datetime
 
 app = FastAPI()
+
+origins = ["*"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.post("/predict_mlp")
@@ -30,6 +42,44 @@ async def training_mlp(nb_epochs: int, hidden_layers: List[int]):
     )
     dataset = DataManager.load_dataset(dataset_path)
 
-    btf.train_mlp(dataset, nb_epochs, hidden_layers)
+    now = datetime.now()
+
+    os.makedirs("train", exist_ok=True)
+
+    open(f"train/mlp_{now.strftime('%Y-%m-%d_%H-%M-%S')}", "a").close()
+
+    btf.train_mlp(
+        dataset,
+        nb_epochs,
+        hidden_layers,
+        f"train/mlp_{now.strftime('%Y-%m-%d_%H-%M-%S')}",
+    )
 
     return {"training": "OK"}
+
+
+@app.get("/get_results")
+def get_results():
+    files = os.listdir("train")
+    files.sort(reverse=True)
+    return {"files": files}
+
+
+@app.get("/get_results_data")
+def get_results_data():
+    final = []
+
+    files = os.listdir("train")
+
+    for file_name in files:
+        with open(f"train/{file_name}") as f:
+            lines = f.readlines()
+
+        results = []
+
+        for line in lines:
+            results.append(float(line.strip()))
+
+        final.append({"name": file_name, "data": results})
+
+    return {"results": final}

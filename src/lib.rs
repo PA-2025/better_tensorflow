@@ -16,8 +16,9 @@ fn train_mlp(
     dataset: Vec<Vec<Vec<Vec<f32>>>>,
     nb_epoch: i32,
     hidden_layers: Vec<i32>,
+    training_name: String
 ) -> PyResult<()> {
-    Ok(mlp::training(dataset, nb_epoch, hidden_layers))
+    Ok(mlp::training(dataset, nb_epoch, hidden_layers, training_name))
 }
 
 /// A Python module implemented in Rust.
