@@ -48,6 +48,10 @@ async def training_mlp(nb_epochs: int, hidden_layers: List[int]):
 
     open(f"train/mlp_{now.strftime('%Y-%m-%d_%H-%M-%S')}", "a").close()
 
+    print("Training MLP with the following parameters:")
+    print(f"Number of epochs: {nb_epochs}")
+    print(f"Hidden layers: {hidden_layers}")
+
     btf.train_mlp(
         dataset,
         nb_epochs,

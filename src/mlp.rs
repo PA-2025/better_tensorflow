@@ -155,6 +155,7 @@ pub fn training(
     let mut all_layers = init_layers(layers);
     for epoch in 0..nb_epoch {
         println!("Epoch : {} / {}", epoch + 1, nb_epoch);
+        let mut mse = 0.;
         for index_cat in 0..dataset.len() {
             let mut need_result_output_neural = vec![];
             for i in 0..dataset.len() {
@@ -167,12 +168,10 @@ pub fn training(
             for index_data in 0..dataset[index_cat].len() {
                 let result_layers =
                     forward_propagation(all_layers.clone(), dataset[index_cat][index_data].clone());
-                let mse = loss::mse(
+                mse = loss::mse(
                     result_layers.last().unwrap().clone(),
                     need_result_output_neural.clone(),
                 );
-                data_manager::add_text_to_file(training_name.clone(), mse.to_string() + "\n")
-                    .expect("Error: error during write train data");
                 all_layers = back_propagation(
                     need_result_output_neural.clone(),
                     all_layers,
@@ -181,6 +180,8 @@ pub fn training(
                 );
             }
         }
+        data_manager::add_text_to_file(training_name.clone(), mse.to_string() + "\n")
+            .expect("Error: error during write train data");
     }
     data_converter::export_weights_mlp(all_layers.clone());
 }
