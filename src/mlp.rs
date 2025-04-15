@@ -4,16 +4,21 @@ use crate::data_manager;
 use crate::loss;
 use crate::matrix;
 use rand::Rng;
+use std::process::Output;
 
 pub fn init_weights(dim: i32) -> Vec<f32> {
     let mut w = vec![];
     for _ in 0..dim {
-        w.push(rand::thread_rng().gen_range(0..100) as f32);
+        w.push(rand::thread_rng().gen_range(-1..1) as f32);
     }
     w
 }
 
-pub fn forward_propagation(all_layers: Vec<Vec<Vec<f32>>>, matrix: Vec<Vec<f32>>) -> Vec<Vec<f32>> {
+pub fn forward_propagation(
+    all_layers: Vec<Vec<Vec<f32>>>,
+    matrix: Vec<Vec<f32>>,
+    is_classification: bool,
+) -> Vec<Vec<f32>> {
     let mut results_layer: Vec<Vec<f32>> = vec![];
     for layers_index in 0..all_layers.len() {
         let mut result_neural = vec![];
@@ -35,7 +40,15 @@ pub fn forward_propagation(all_layers: Vec<Vec<Vec<f32>>>, matrix: Vec<Vec<f32>>
                     all_layers[layers_index][neural_index_in_layers].clone(),
                 );
             }
-            result_neural.push(activation_function::sigmoid(result));
+            if (layers_index == all_layers.len() - 1) {
+                if (is_classification) {
+                    result_neural.push(activation_function::sigmoid(result));
+                } else {
+                    result_neural.push(result);
+                }
+            } else {
+                result_neural.push(activation_function::sigmoid(result));
+            }
         }
         results_layer.push(result_neural);
     }
@@ -114,11 +127,17 @@ pub fn update_weight(
     updated_w
 }
 
-pub fn predict(matrix: Vec<Vec<f32>>) -> i32 {
+pub fn predict(matrix: Vec<Vec<f32>>, is_classification: bool) -> f32 {
     let all_layers = data_converter::load_weights_mlp();
-    let mut results_layer = forward_propagation(all_layers.clone(), matrix);
+    let mut results_layer = forward_propagation(all_layers.clone(), matrix, is_classification);
     println!("{:?}", results_layer);
-    let mut index_good_neural: i32 = 0;
+    if !is_classification {
+        if results_layer.last().unwrap().len() != 0 {
+            return *results_layer.last().unwrap().last().unwrap();
+        }
+        return -1.;
+    }
+    let mut index_good_neural = 0;
     let mut max_result_neural = 0.;
     for index_neural in 0..results_layer.last().unwrap().len() {
         if results_layer.last().unwrap()[index_neural] > max_result_neural {
@@ -126,7 +145,7 @@ pub fn predict(matrix: Vec<Vec<f32>>) -> i32 {
             index_good_neural = index_neural as i32;
         }
     }
-    index_good_neural
+    index_good_neural as f32
 }
 
 pub fn init_layers(nb_layers: Vec<i32>) -> Vec<Vec<Vec<f32>>> {
@@ -142,41 +161,57 @@ pub fn init_layers(nb_layers: Vec<i32>) -> Vec<Vec<Vec<f32>>> {
 }
 
 pub fn training(
-    dataset: Vec<Vec<Vec<Vec<f32>>>>,
+    dataset_input: Vec<Vec<Vec<Vec<f32>>>>,
+    output_dataset: Vec<f32>,
     nb_epoch: i32,
     hidden_layers: Vec<i32>,
     training_name: String,
+    is_classification: bool,
+    verbose: bool,
 ) {
-    let mut layers: Vec<i32> = vec![(dataset[0][0].len() * dataset[0][0][0].len()) as i32];
+    let mut layers: Vec<i32> =
+        vec![(dataset_input[0][0].len() * dataset_input[0][0][0].len()) as i32];
     for i in 0..hidden_layers.len() {
         layers.push(hidden_layers[i]);
     }
-    layers.push(dataset.len() as i32);
+    layers.push(dataset_input.len() as i32);
     let mut all_layers = init_layers(layers);
     for epoch in 0..nb_epoch {
-        println!("Epoch : {} / {}", epoch + 1, nb_epoch);
+        if (verbose) {
+            println!("Epoch : {} / {}", epoch + 1, nb_epoch);
+        }
         let mut mse = 0.;
-        for index_cat in 0..dataset.len() {
+        let mut accuracy = 0.;
+        for index_cat in 0..dataset_input.len() {
             let mut need_result_output_neural = vec![];
-            for i in 0..dataset.len() {
+            for i in 0..dataset_input.len() {
                 if index_cat == i {
                     need_result_output_neural.push(1.);
                 } else {
                     need_result_output_neural.push(0.);
                 }
             }
-            for index_data in 0..dataset[index_cat].len() {
-                let result_layers =
-                    forward_propagation(all_layers.clone(), dataset[index_cat][index_data].clone());
+            let random_index: usize =
+                rand::thread_rng().gen_range(0..dataset_input[index_cat].len()) as usize;
+            for index_data in random_index..random_index + 1 {
+                let result_layers = forward_propagation(
+                    all_layers.clone(),
+                    dataset_input[index_cat][index_data].clone(),
+                    is_classification,
+                );
                 mse = loss::mse(
                     result_layers.last().unwrap().clone(),
                     need_result_output_neural.clone(),
                 );
                 all_layers = back_propagation(
-                    need_result_output_neural.clone(),
+                    if is_classification {
+                        need_result_output_neural.clone()
+                    } else {
+                        output_dataset.clone()
+                    },
                     all_layers,
                     result_layers,
-                    matrix::matrix_to_array(dataset[index_cat][index_data].clone()),
+                    matrix::matrix_to_array(dataset_input[index_cat][index_data].clone()),
                 );
             }
         }

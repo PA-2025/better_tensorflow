@@ -26,7 +26,7 @@ async def predict_mlp(file: UploadFile):
         f.write(await file.read())
 
     data = DataManager.load_data("temp.mp3")
-    prediction = btf.predict_mlp(data)
+    prediction = btf.predict_mlp(data, True)
 
     f = open("dataset.txt", "r")
     cat = json.loads(f.read())
@@ -54,9 +54,12 @@ async def training_mlp(nb_epochs: int, hidden_layers: List[int]):
 
     btf.train_mlp(
         dataset,
+        [],
         nb_epochs,
         hidden_layers,
         f"train/mlp_{now.strftime('%Y-%m-%d_%H-%M-%S')}",
+        True,
+        True,
     )
 
     return {"training": "OK"}
