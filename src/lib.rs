@@ -7,19 +7,20 @@ mod matrix;
 mod mlp;
 
 #[pyfunction]
-fn predict_mlp(input: Vec<Vec<f32>>, is_classification: bool) -> PyResult<f32> {
+fn predict_mlp(input: Vec<f32>, is_classification: bool) -> PyResult<f32> {
     Ok(mlp::predict(input, is_classification))
 }
 
 #[pyfunction]
 fn train_mlp(
-    dataset: Vec<Vec<Vec<Vec<f32>>>>,
+    dataset: Vec<Vec<Vec<f32>>>,
     dataset_output: Vec<f32>,
     nb_epoch: i32,
     hidden_layers: Vec<i32>,
     training_name: String,
     is_classification: bool,
-    verbose: bool
+    verbose: bool,
+    learning_rate: f32,
 ) -> PyResult<()> {
     Ok(mlp::training(
         dataset,
@@ -28,14 +29,20 @@ fn train_mlp(
         hidden_layers,
         training_name,
         is_classification,
-        verbose
+        verbose,
+        learning_rate,
     ))
 }
 
-/// A Python module implemented in Rust.
+#[pyfunction]
+fn convert_matrix_to_array(matrix: Vec<Vec<f32>>) -> PyResult<Vec<f32>> {
+    Ok(matrix::matrix_to_array(matrix))
+}
+
 #[pymodule]
 fn better_tensorflow(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(predict_mlp, m)?)?;
     m.add_function(wrap_pyfunction!(train_mlp, m)?)?;
+    m.add_function(wrap_pyfunction!(convert_matrix_to_array, m)?)?;
     Ok(())
 }

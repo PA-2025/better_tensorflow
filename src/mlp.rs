@@ -16,7 +16,7 @@ pub fn init_weights(dim: i32) -> Vec<f32> {
 
 pub fn forward_propagation(
     all_layers: Vec<Vec<Vec<f32>>>,
-    matrix: Vec<Vec<f32>>,
+    data: Vec<f32>,
     is_classification: bool,
 ) -> Vec<Vec<f32>> {
     let mut results_layer: Vec<Vec<f32>> = vec![];
@@ -26,7 +26,7 @@ pub fn forward_propagation(
             let mut result = 0.;
             if layers_index == 0 {
                 result = matrix::sum(
-                    matrix::matrix_to_array(matrix.clone()),
+                    data.clone(),
                     all_layers[layers_index][neural_index_in_layers].clone(),
                 );
             } else {
@@ -60,6 +60,7 @@ pub fn back_propagation(
     all_layers: Vec<Vec<Vec<f32>>>,
     result_fastforward: Vec<Vec<f32>>,
     input_data: Vec<f32>,
+    learning_rage: f32,
 ) -> Vec<Vec<Vec<f32>>> {
     let mut updated_layers = all_layers.clone();
 
@@ -75,6 +76,7 @@ pub fn back_propagation(
                     output.clone(),
                     o,
                     result_fastforward[layers_index][neural_index],
+                    learning_rage,
                 );
             } else if layers_index == 0 {
                 let mut a = vec![];
@@ -86,6 +88,7 @@ pub fn back_propagation(
                     a,
                     input_data.clone(),
                     result_fastforward[layers_index][neural_index],
+                    learning_rage,
                 );
             } else {
                 let mut a = vec![];
@@ -101,6 +104,7 @@ pub fn back_propagation(
                     a,
                     o,
                     result_fastforward[layers_index][neural_index],
+                    learning_rage,
                 );
             }
         }
@@ -114,9 +118,9 @@ pub fn update_weight(
     y: Vec<f32>,
     values_before_w: Vec<f32>,
     result_w_x_values_before_w: f32,
+    learning_rate: f32,
 ) -> Vec<f32> {
     let mut updated_w = w.clone();
-    let learning_rate = 0.01;
     for i in 0..w.len() {
         for j in 0..y.len() {
             let gradient = (result_w_x_values_before_w - y[j]) * values_before_w[i];
@@ -127,9 +131,9 @@ pub fn update_weight(
     updated_w
 }
 
-pub fn predict(matrix: Vec<Vec<f32>>, is_classification: bool) -> f32 {
+pub fn predict(data: Vec<f32>, is_classification: bool) -> f32 {
     let all_layers = data_converter::load_weights_mlp();
-    let mut results_layer = forward_propagation(all_layers.clone(), matrix, is_classification);
+    let mut results_layer = forward_propagation(all_layers.clone(), data, is_classification);
     println!("{:?}", results_layer);
     if !is_classification {
         if results_layer.last().unwrap().len() != 0 {
@@ -161,16 +165,16 @@ pub fn init_layers(nb_layers: Vec<i32>) -> Vec<Vec<Vec<f32>>> {
 }
 
 pub fn training(
-    dataset_input: Vec<Vec<Vec<Vec<f32>>>>,
+    dataset_input: Vec<Vec<Vec<f32>>>,
     output_dataset: Vec<f32>,
     nb_epoch: i32,
     hidden_layers: Vec<i32>,
     training_name: String,
     is_classification: bool,
     verbose: bool,
+    learning_rate: f32,
 ) {
-    let mut layers: Vec<i32> =
-        vec![(dataset_input[0][0].len() * dataset_input[0][0][0].len()) as i32];
+    let mut layers: Vec<i32> = vec![(dataset_input[0][0].len() * dataset_input[0][0].len()) as i32];
     for i in 0..hidden_layers.len() {
         layers.push(hidden_layers[i]);
     }
@@ -211,7 +215,8 @@ pub fn training(
                     },
                     all_layers,
                     result_layers,
-                    matrix::matrix_to_array(dataset_input[index_cat][index_data].clone()),
+                    dataset_input[index_cat][index_data].clone(),
+                    learning_rate,
                 );
             }
         }

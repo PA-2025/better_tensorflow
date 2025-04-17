@@ -26,6 +26,7 @@ async def predict_mlp(file: UploadFile):
         f.write(await file.read())
 
     data = DataManager.load_data("temp.mp3")
+    data = btf.convert_matrix_to_array(data)
     prediction = btf.predict_mlp(data, True)
 
     f = open("dataset.txt", "r")
@@ -36,7 +37,7 @@ async def predict_mlp(file: UploadFile):
 
 
 @app.post("/train_mlp")
-async def training_mlp(nb_epochs: int, hidden_layers: List[int]):
+async def training_mlp(nb_epochs: int, hidden_layers: List[int], learning_rate: float):
     dataset_path = (
         "/home/victor/Documents/esgi/pa-2025/data-registry/script/scrapper/music/"
     )
@@ -60,6 +61,7 @@ async def training_mlp(nb_epochs: int, hidden_layers: List[int]):
         f"train/mlp_{now.strftime('%Y-%m-%d_%H-%M-%S')}",
         True,
         True,
+        learning_rate=learning_rate,
     )
 
     return {"training": "OK"}
