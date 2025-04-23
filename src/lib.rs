@@ -7,13 +7,14 @@ mod matrix;
 mod mlp;
 
 #[pyfunction]
-fn predict_mlp(input: Vec<f32>, is_classification: bool) -> PyResult<f32> {
-    Ok(mlp::predict(input, is_classification))
+fn predict_mlp(input: Vec<f32>,all_layers:Vec<Vec<Vec<f32>>>, is_classification: bool) -> PyResult<i32> {
+    Ok(mlp::predict(input,all_layers ,is_classification))
 }
 
 #[pyfunction]
 fn train_mlp(
     dataset: Vec<Vec<Vec<f32>>>,
+    dataset_validation: Vec<Vec<Vec<f32>>>,
     dataset_output: Vec<f32>,
     nb_epoch: i32,
     hidden_layers: Vec<i32>,
@@ -24,6 +25,7 @@ fn train_mlp(
 ) -> PyResult<()> {
     Ok(mlp::training(
         dataset,
+        dataset_validation,
         dataset_output,
         nb_epoch,
         hidden_layers,

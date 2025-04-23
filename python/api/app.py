@@ -27,7 +27,7 @@ async def predict_mlp(file: UploadFile):
 
     data = DataManager.load_data("temp.mp3")
     data = btf.convert_matrix_to_array(data)
-    prediction = btf.predict_mlp(data, True)
+    prediction = btf.predict_mlp(data, [], True)
 
     f = open("dataset.txt", "r")
     cat = json.loads(f.read())
@@ -42,6 +42,7 @@ async def training_mlp(nb_epochs: int, hidden_layers: List[int], learning_rate: 
         "/home/victor/Documents/esgi/pa-2025/data-registry/script/scrapper/music/"
     )
     dataset = DataManager.load_dataset(dataset_path)
+    dataset_test = DataManager.load_dataset(dataset_path)
 
     now = datetime.now()
 
@@ -55,6 +56,7 @@ async def training_mlp(nb_epochs: int, hidden_layers: List[int], learning_rate: 
 
     btf.train_mlp(
         dataset,
+        dataset_test,
         [],
         nb_epochs,
         hidden_layers,
