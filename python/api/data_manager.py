@@ -1,6 +1,7 @@
 import librosa
 from librosa.util import fix_length
 from typing import List
+import better_tensorflow as btf
 import os
 import json
 
@@ -25,6 +26,7 @@ class DataManager:
                     y=audio_data, sr=sample_rate
                 )
                 mel_spectrogram = fix_length(mel_spectrogram, size=shape)
+                mel_spectrogram = btf.convert_matrix_to_array(mel_spectrogram)
                 cat_dataset.append(mel_spectrogram)
             dataset.append(cat_dataset)
         return dataset
