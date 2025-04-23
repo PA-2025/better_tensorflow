@@ -5,6 +5,7 @@ mod data_manager;
 mod loss;
 mod matrix;
 mod mlp;
+mod database;
 
 #[pyfunction]
 fn predict_mlp(input: Vec<f32>,all_layers:Vec<Vec<Vec<f32>>>, is_classification: bool) -> PyResult<i32> {

@@ -6,6 +6,7 @@ import os
 import json
 from data_manager import DataManager
 from datetime import datetime
+import sqlite3
 
 app = FastAPI()
 
@@ -71,26 +72,44 @@ async def training_mlp(nb_epochs: int, hidden_layers: List[int], learning_rate: 
 
 @app.get("/get_results")
 def get_results():
-    files = os.listdir("train")
-    files.sort(reverse=True)
+    con = sqlite3.connect("app_database.db")
+    cur = con.cursor()
+    res = cur.execute("select distinct training_name from training_data ")
+    rows = res.fetchall()
+    results = [row[0] for row in rows]
+    files = []
+    for r in results:
+        files.append(f"{r}_mse")
+        files.append(f"{r}_accuracy")
     return {"files": files}
 
 
 @app.get("/get_results_data")
 def get_results_data():
+    con = sqlite3.connect("app_database.db")
+    cur = con.cursor()
+    res = cur.execute("select distinct training_name from training_data ")
+    rows = res.fetchall()
+    names = [row[0] for row in rows]
     final = []
 
-    files = os.listdir("train")
-
-    for file_name in files:
-        with open(f"train/{file_name}") as f:
-            lines = f.readlines()
-
+    for file_name in names:
         results = []
+        res = cur.execute(
+            "select mse, accuracy from training_data  where training_name = ? order by epoch",
+            (file_name,),
+        )
+        for line in res.fetchall():
+            results.append(
+                {
+                    "mse": line[0],
+                    "accuracy": line[1],
+                }
+            )
 
-        for line in lines:
-            results.append(float(line.strip()))
-
-        final.append({"name": file_name, "data": results})
+        final.append({"name": f"{file_name}_mse", "data": [x["mse"] for x in results]})
+        final.append(
+            {"name": f"{file_name}_accuracy", "data": [x["accuracy"] for x in results]}
+        )
 
     return {"results": final}

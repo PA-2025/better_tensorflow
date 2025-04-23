@@ -1,6 +1,7 @@
 use crate::activation_function;
 use crate::data_converter;
 use crate::data_manager;
+use crate::database;
 use crate::loss;
 use crate::matrix;
 use rand::Rng;
@@ -61,6 +62,7 @@ pub fn back_propagation(
     input_data: Vec<f32>,
     learning_rage: f32,
 ) -> Vec<Vec<Vec<f32>>> {
+    let mut result_fastforward_corrected = result_fastforward.clone();
     let mut updated_layers = all_layers.clone();
     for layers_index in (0..all_layers.len()).rev() {
         for neural_index in 0..all_layers[layers_index].len() {
@@ -72,20 +74,22 @@ pub fn back_propagation(
                 updated_layers[layers_index][neural_index] = update_weight(
                     updated_layers[layers_index][neural_index].clone(),
                     output.clone(),
-                    o,
+                    o.clone(),
                     result_fastforward[layers_index].clone(),
                     learning_rage,
                 );
+                for i in 0..result_fastforward_corrected[layers_index].len() {
+                    let mut total = 0.;
+                    for j in 0..updated_layers[layers_index][neural_index].len() {
+                        total += o[j] * updated_layers[layers_index][neural_index][j]
+                    }
+                    result_fastforward_corrected[layers_index][i] = total;
+                }
             } else if layers_index == 0 {
                 let mut a = vec![];
-                for i in 0..result_fastforward[layers_index + 1].len() {
-                    a.push(result_fastforward[layers_index + 1][i]);
+                for i in 0..result_fastforward_corrected[layers_index].len() {
+                    a.push(result_fastforward_corrected[layers_index][i]);
                 }
-                println!("a-");
-                println!("{:?}", result_fastforward);
-                println!("{:?}", updated_layers);
-                println!("{:?}", input_data);
-                println!("{:?}", result_fastforward);
                 updated_layers[layers_index][neural_index] = update_weight(
                     updated_layers[layers_index][neural_index].clone(),
                     a,
@@ -93,25 +97,36 @@ pub fn back_propagation(
                     result_fastforward[layers_index].clone(),
                     learning_rage,
                 );
-                println!("a");
+                for i in 0..result_fastforward_corrected[layers_index].len() {
+                    let mut total = 0.;
+                    for j in 0..updated_layers[layers_index][neural_index].len() {
+                        total += input_data[j] * updated_layers[layers_index][neural_index][j]
+                    }
+                    result_fastforward_corrected[layers_index][i] = total;
+                }
             } else {
                 let mut a = vec![];
                 let mut o = vec![];
-                for i in 0..result_fastforward[layers_index + 1].len() {
-                    a.push(result_fastforward[layers_index + 1][i]);
+                for i in 0..result_fastforward_corrected[layers_index].len() {
+                    a.push(result_fastforward_corrected[layers_index][i]);
                 }
                 for i in 0..result_fastforward[layers_index - 1].len() {
                     o.push(result_fastforward[layers_index - 1][i]);
                 }
-                println!("c-");
                 updated_layers[layers_index][neural_index] = update_weight(
                     updated_layers[layers_index][neural_index].clone(),
                     a,
-                    o,
+                    o.clone(),
                     result_fastforward[layers_index].clone(),
                     learning_rage,
                 );
-                println!("c");
+                for i in 0..result_fastforward_corrected[layers_index].len() {
+                    let mut total = 0.;
+                    for j in 0..updated_layers[layers_index][neural_index].len() {
+                        total += o[j] * updated_layers[layers_index][neural_index][j]
+                    }
+                    result_fastforward_corrected[layers_index][i] = total;
+                }
             }
         }
     }
@@ -245,7 +260,6 @@ pub fn training(
             learning_rate,
         );
 
-        
         let mut accuracy = 0.;
         if dataset_validation.len() != 0 && is_classification {
             accuracy = compute_accuracy_score(dataset_validation.clone(), all_layers.clone());
@@ -255,10 +269,13 @@ pub fn training(
             need_result_output_neural.clone(),
         );
 
-        data_manager::add_text_to_file(training_name.clone(), mse.to_string() + "\n")
+        database::insert_training_score(training_name.clone(), mse, accuracy, epoch)
+            .expect("Error during save record");
+
+        /*data_manager::add_text_to_file(training_name.clone(), mse.to_string() + "\n")
             .expect("Error: error during write train data");
         data_manager::add_text_to_file(training_name.clone() + "_acc", accuracy.to_string() + "\n")
-            .expect("Error: error during write train data");
+            .expect("Error: error during write train data");*/
     }
     data_converter::export_weights_mlp(all_layers.clone());
 }

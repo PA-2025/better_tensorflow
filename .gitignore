@@ -13,3 +13,5 @@ python/better_tensorflow/__pycache__/
 *.weight
 
 dataset.txt
+
+app_database.db
