@@ -64,6 +64,7 @@ async def training_mlp(nb_epochs: int, hidden_layers: List[int], learning_rate: 
         f"train/mlp_{now.strftime('%Y-%m-%d_%H-%M-%S')}",
         True,
         True,
+        True,
         learning_rate=learning_rate,
     )
 
