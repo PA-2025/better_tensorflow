@@ -39,9 +39,7 @@ async def predict_mlp(file: UploadFile):
 
 @app.post("/train_mlp")
 async def training_mlp(nb_epochs: int, hidden_layers: List[int], learning_rate: float):
-    dataset_path = (
-        "/home/victor/Documents/esgi/pa-2025/data-registry/script/scrapper/music/"
-    )
+    dataset_path = "data/music/"
     dataset = DataManager.load_dataset(dataset_path)
     dataset_test = DataManager.load_dataset(dataset_path)
 
