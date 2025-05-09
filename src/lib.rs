@@ -2,28 +2,36 @@ use pyo3::prelude::*;
 mod activation_function;
 mod data_converter;
 mod data_manager;
+mod database;
+mod linear_regression;
 mod loss;
 mod matrix;
 mod mlp;
-mod linear_regression;
-mod database;
 
 #[pyfunction]
 fn train_linear_regression(
-    x_data : Vec<f32>,
-    y_data : Vec<f32>,
-    verbose : bool,
+    x_data: Vec<f32>,
+    y_data: Vec<f32>,
+    verbose: bool,
     epochs: i32,
-    training_name: String
+    training_name: String,
 ) -> PyResult<()> {
-    Ok(linear_regression::train(x_data, y_data, verbose, epochs, training_name))
+    Ok(linear_regression::train(
+        x_data,
+        y_data,
+        verbose,
+        epochs,
+        training_name,
+    ))
 }
 
-
-
 #[pyfunction]
-fn predict_mlp(input: Vec<f32>,all_layers:Vec<Vec<Vec<f32>>>, is_classification: bool) -> PyResult<i32> {
-    Ok(mlp::predict(input,all_layers ,is_classification))
+fn predict_mlp(
+    input: Vec<f32>,
+    all_layers: Vec<Vec<Vec<f32>>>,
+    is_classification: bool,
+) -> PyResult<i32> {
+    Ok(mlp::predict(input, all_layers, is_classification))
 }
 
 #[pyfunction]
@@ -36,6 +44,7 @@ fn train_mlp(
     training_name: String,
     is_classification: bool,
     verbose: bool,
+    save_in_db: bool,
     learning_rate: f32,
 ) -> PyResult<()> {
     Ok(mlp::training(
@@ -47,6 +56,7 @@ fn train_mlp(
         training_name,
         is_classification,
         verbose,
+        save_in_db,
         learning_rate,
     ))
 }
@@ -55,7 +65,6 @@ fn train_mlp(
 fn convert_matrix_to_array(matrix: Vec<Vec<f32>>) -> PyResult<Vec<f32>> {
     Ok(matrix::matrix_to_array(matrix))
 }
-
 
 #[pymodule]
 fn better_tensorflow(m: &Bound<'_, PyModule>) -> PyResult<()> {

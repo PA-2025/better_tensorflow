@@ -56,101 +56,50 @@ pub fn forward_propagation(
 }
 
 pub fn back_propagation(
+    is_classification: bool,
     output: Vec<f32>,
     all_layers: Vec<Vec<Vec<f32>>>,
     result_fastforward: Vec<Vec<f32>>,
-    input_data: Vec<f32>,
+    delta: &mut Vec<Vec<f32>>,
     learning_rage: f32,
 ) -> Vec<Vec<Vec<f32>>> {
-    let mut result_fastforward_corrected = result_fastforward.clone();
     let mut updated_layers = all_layers.clone();
-    for layers_index in (0..all_layers.len()).rev() {
-        for neural_index in 0..all_layers[layers_index].len() {
-            if layers_index == all_layers.len() - 1 {
-                let mut o = vec![];
-                for i in 0..result_fastforward[layers_index - 1].len() {
-                    o.push(result_fastforward[layers_index - 1][i]);
-                }
-                updated_layers[layers_index][neural_index] = update_weight(
-                    updated_layers[layers_index][neural_index].clone(),
-                    output.clone(),
-                    o.clone(),
-                    result_fastforward[layers_index].clone(),
-                    learning_rage,
-                );
-                for i in 0..result_fastforward_corrected[layers_index].len() {
-                    let mut total = 0.;
-                    for j in 0..updated_layers[layers_index][neural_index].len() {
-                        total += o[j] * updated_layers[layers_index][neural_index][j]
-                    }
-                    result_fastforward_corrected[layers_index][i] = total;
-                }
-            } else if layers_index == 0 {
-                let mut a = vec![];
-                for i in 0..result_fastforward_corrected[layers_index].len() {
-                    a.push(result_fastforward_corrected[layers_index][i]);
-                }
-                updated_layers[layers_index][neural_index] = update_weight(
-                    updated_layers[layers_index][neural_index].clone(),
-                    a,
-                    input_data.clone(),
-                    result_fastforward[layers_index].clone(),
-                    learning_rage,
-                );
-                for i in 0..result_fastforward_corrected[layers_index].len() {
-                    let mut total = 0.;
-                    for j in 0..updated_layers[layers_index][neural_index].len() {
-                        total += input_data[j] * updated_layers[layers_index][neural_index][j]
-                    }
-                    result_fastforward_corrected[layers_index][i] = total;
-                }
-            } else {
-                let mut a = vec![];
-                let mut o = vec![];
-                for i in 0..result_fastforward_corrected[layers_index].len() {
-                    a.push(result_fastforward_corrected[layers_index][i]);
-                }
-                for i in 0..result_fastforward[layers_index - 1].len() {
-                    o.push(result_fastforward[layers_index - 1][i]);
-                }
-                updated_layers[layers_index][neural_index] = update_weight(
-                    updated_layers[layers_index][neural_index].clone(),
-                    a,
-                    o.clone(),
-                    result_fastforward[layers_index].clone(),
-                    learning_rage,
-                );
-                for i in 0..result_fastforward_corrected[layers_index].len() {
-                    let mut total = 0.;
-                    for j in 0..updated_layers[layers_index][neural_index].len() {
-                        total += o[j] * updated_layers[layers_index][neural_index][j]
-                    }
-                    result_fastforward_corrected[layers_index][i] = total;
-                }
+
+    for j in 0..all_layers.last().unwrap().len() {
+        delta[all_layers.len() - 1][j] = result_fastforward.last().unwrap()[j] - output[j];
+        if is_classification {
+            delta[all_layers.len() - 1][j] *=
+                1. - result_fastforward[all_layers.len() - 1][j].powf(2.);
+        }
+    }
+
+    for layers_index in (1..all_layers.len()).rev() {
+        for back_neural_index in 0..all_layers[layers_index - 1].len() {
+            let mut total = 0.;
+            for actual_neural_index in 0..all_layers[layers_index].len() {
+                total += all_layers[layers_index][actual_neural_index][back_neural_index]
+                    * delta[layers_index][actual_neural_index];
+            }
+            total *= 1. - result_fastforward[layers_index - 1][back_neural_index].powf(2.);
+            delta[layers_index - 1][back_neural_index] = total;
+        }
+    }
+
+    for layer_index in 0..all_layers.len() {
+        for neural_index in 0..all_layers[layer_index].len() {
+            for weight_index in 0..all_layers[layer_index][neural_index].len() {
+                updated_layers[layer_index][neural_index][weight_index] -= learning_rage
+                    * delta[layer_index][neural_index]
+                    * if layer_index == 0 {
+                        result_fastforward[layer_index][weight_index]
+                    } else {
+                        result_fastforward[layer_index - 1][weight_index]
+                    };
             }
         }
     }
 
     updated_layers
-}
-
-pub fn update_weight(
-    w: Vec<f32>,
-    y: Vec<f32>,
-    values_before_w: Vec<f32>,
-    result_w_x_values_before_w: Vec<f32>,
-    learning_rate: f32,
-) -> Vec<f32> {
-    let mut updated_w = w.clone();
-    for i in 0..w.len() {
-        for j in 0..y.len() {
-            let error = result_w_x_values_before_w[j] - y[j];
-            let gradient = error * values_before_w[i];
-            updated_w[i] -= learning_rate * gradient;
-        }
-    }
-
-    updated_w
 }
 
 pub fn predict(data: Vec<f32>, mut all_layers: Vec<Vec<Vec<f32>>>, is_classification: bool) -> i32 {
@@ -173,7 +122,7 @@ pub fn predict(data: Vec<f32>, mut all_layers: Vec<Vec<Vec<f32>>>, is_classifica
             index_good_neural = index_neural as i32;
         }
     }
-    index_good_neural as i32
+    index_good_neural
 }
 
 pub fn init_layers(nb_layers: Vec<i32>) -> Vec<Vec<Vec<f32>>> {
@@ -219,6 +168,7 @@ pub fn training(
     training_name: String,
     is_classification: bool,
     verbose: bool,
+    save_in_db: bool,
     learning_rate: f32,
 ) {
     let mut layers: Vec<i32> = vec![dataset_input[0][0].len() as i32];
@@ -227,6 +177,16 @@ pub fn training(
     }
     layers.push(dataset_input.len() as i32);
     let mut all_layers = init_layers(layers);
+
+    let mut delta: Vec<Vec<f32>> = vec![];
+
+    for i in 0..all_layers.len() {
+        delta.push(vec![]);
+        for j in 0..all_layers[i].len() {
+            delta[i].push(0.);
+        }
+    }
+
     for epoch in 0..nb_epoch {
         if (verbose) {
             println!("Epoch : {} / {}", epoch + 1, nb_epoch);
@@ -249,6 +209,7 @@ pub fn training(
         );
 
         all_layers = back_propagation(
+            is_classification,
             if is_classification {
                 need_result_output_neural.clone()
             } else {
@@ -256,21 +217,23 @@ pub fn training(
             },
             all_layers,
             result_layers.clone(),
-            dataset_input[index_cat][index_data].clone(),
+            &mut delta,
             learning_rate,
         );
 
-        let mut accuracy = 0.;
-        if dataset_validation.len() != 0 && is_classification {
-            accuracy = compute_accuracy_score(dataset_validation.clone(), all_layers.clone());
-        }
-        let mse = loss::mse(
-            result_layers.last().unwrap().clone(),
-            need_result_output_neural.clone(),
-        );
+        if save_in_db {
+            let mut accuracy = 0.;
+            if dataset_validation.len() != 0 && is_classification {
+                accuracy = compute_accuracy_score(dataset_validation.clone(), all_layers.clone());
+            }
+            let mse = loss::mse(
+                result_layers.last().unwrap().clone(),
+                need_result_output_neural.clone(),
+            );
 
-        database::insert_training_score(training_name.clone(), mse, accuracy, epoch)
-            .expect("Error during save record");
+            database::insert_training_score(training_name.clone(), mse, accuracy, epoch)
+                .expect("Error during save record");
+        }
 
         /*data_manager::add_text_to_file(training_name.clone(), mse.to_string() + "\n")
             .expect("Error: error during write train data");
