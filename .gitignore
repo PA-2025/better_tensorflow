@@ -15,3 +15,5 @@ python/better_tensorflow/__pycache__/
 dataset.txt
 
 app_database.db
+
+python/api/data/music/

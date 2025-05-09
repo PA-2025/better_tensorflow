@@ -4,6 +4,7 @@ from typing import List
 import better_tensorflow as btf
 import os
 import json
+from tqdm import tqdm
 
 
 class DataManager:
@@ -15,7 +16,7 @@ class DataManager:
         f = open("dataset.txt", "w")
         json.dump(folders, f)
         f.close()
-        for folder in folders:
+        for folder in tqdm(folders):
             files = os.listdir(dataset_path + folder)
             cat_dataset = []
             for file in files:

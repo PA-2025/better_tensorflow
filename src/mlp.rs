@@ -61,6 +61,7 @@ pub fn back_propagation(
     all_layers: Vec<Vec<Vec<f32>>>,
     result_fastforward: Vec<Vec<f32>>,
     delta: &mut Vec<Vec<f32>>,
+    input_data: Vec<f32>,
     learning_rage: f32,
 ) -> Vec<Vec<Vec<f32>>> {
     let mut updated_layers = all_layers.clone();
@@ -84,14 +85,13 @@ pub fn back_propagation(
             delta[layers_index - 1][back_neural_index] = total;
         }
     }
-
     for layer_index in 0..all_layers.len() {
         for neural_index in 0..all_layers[layer_index].len() {
             for weight_index in 0..all_layers[layer_index][neural_index].len() {
                 updated_layers[layer_index][neural_index][weight_index] -= learning_rage
                     * delta[layer_index][neural_index]
                     * if layer_index == 0 {
-                        result_fastforward[layer_index][weight_index]
+                        input_data[weight_index]
                     } else {
                         result_fastforward[layer_index - 1][weight_index]
                     };
@@ -156,7 +156,7 @@ pub fn compute_accuracy_score(
             total += 1;
         }
     }
-    (score / total) as f32
+    (score * 100 / total ) as f32
 }
 
 pub fn training(
@@ -218,6 +218,7 @@ pub fn training(
             all_layers,
             result_layers.clone(),
             &mut delta,
+            dataset_input[index_cat][index_data].clone(),
             learning_rate,
         );
 

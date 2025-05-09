@@ -39,15 +39,12 @@ async def predict_mlp(file: UploadFile):
 
 @app.post("/train_mlp")
 async def training_mlp(nb_epochs: int, hidden_layers: List[int], learning_rate: float):
-    dataset_path = "data/music/"
+    print(hidden_layers)
+    dataset_path = "python/api/data/music/"
     dataset = DataManager.load_dataset(dataset_path)
     dataset_test = DataManager.load_dataset(dataset_path)
 
     now = datetime.now()
-
-    os.makedirs("train", exist_ok=True)
-
-    open(f"train/mlp_{now.strftime('%Y-%m-%d_%H-%M-%S')}", "a").close()
 
     print("Training MLP with the following parameters:")
     print(f"Number of epochs: {nb_epochs}")
