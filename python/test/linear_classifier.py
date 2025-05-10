@@ -11,7 +11,7 @@ train_linear(
     mode="regression",
     verbose=True,
     epochs=1000,
-    training_name="test_model"
+    training_name="test_model",
 )
 
 # Vérification de l'existence du fichier de poids avant chargement
@@ -24,4 +24,6 @@ if os.path.exists("w_linear.weight"):
 
     print("Prédictions :", y_pred)
 else:
-    print("Fichier w_linear.weight introuvable. Veuillez vérifier que l'entraînement a bien exporté les poids.")
+    print(
+        "Fichier w_linear.weight introuvable. Veuillez vérifier que l'entraînement a bien exporté les poids."
+    )
