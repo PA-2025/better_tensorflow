@@ -1,28 +1,35 @@
 use pyo3::prelude::*;
+ // Pour PyResult, PyModule, et wrap_pyfunction!
+use pyo3::wrap_pyfunction;
 mod activation_function;
 mod data_converter;
 mod data_manager;
 mod database;
-mod linear_regression;
 mod loss;
 mod matrix;
 mod mlp;
+mod linear;
 
 #[pyfunction]
-fn train_linear_regression(
+
+fn train_linear(
     x_data: Vec<f32>,
     y_data: Vec<f32>,
+    mode: String,
     verbose: bool,
     epochs: i32,
     training_name: String,
 ) -> PyResult<()> {
-    Ok(linear_regression::train(
-        x_data,
-        y_data,
-        verbose,
-        epochs,
-        training_name,
-    ))
+    Ok(linear::train(x_data, y_data, &mode, verbose, epochs, training_name))
+}
+#[pyfunction]
+fn predict_linear(
+    x_data: Vec<f32>,
+    m: f32,
+    b: f32,
+    mode: String,
+) -> PyResult<Vec<f32>> {
+    Ok(linear::predict(x_data, m, b, &mode))
 }
 
 #[pyfunction]
@@ -69,8 +76,9 @@ fn convert_matrix_to_array(matrix: Vec<Vec<f32>>) -> PyResult<Vec<f32>> {
 #[pymodule]
 fn better_tensorflow(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(predict_mlp, m)?)?;
+    m.add_function(wrap_pyfunction!(predict_linear, m)?)?;
     m.add_function(wrap_pyfunction!(train_mlp, m)?)?;
-    m.add_function(wrap_pyfunction!(train_linear_regression, m)?)?;
+    m.add_function(wrap_pyfunction!(train_linear, m)?)?;
     m.add_function(wrap_pyfunction!(convert_matrix_to_array, m)?)?;
     Ok(())
 }
