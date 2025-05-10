@@ -130,5 +130,5 @@ pub fn train(
 
     // Enregistrer le score final d'entraînement dans la base de données
     insert_training_score(training_name, final_loss, 0.0, epochs).expect("Error inserting final score into database");
-    data_converter::export_weights_linear(m, b);
+    export_weights_linear(m, b);
 }

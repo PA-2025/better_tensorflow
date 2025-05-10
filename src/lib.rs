@@ -10,6 +10,7 @@ mod matrix;
 mod mlp;
 mod linear;
 
+
 #[pyfunction]
 
 fn train_linear(
@@ -27,11 +28,10 @@ fn predict_linear(
     x_data: Vec<f32>,
     m: f32,
     b: f32,
-    mode: String,
+    mode: &str,
 ) -> PyResult<Vec<f32>> {
-    Ok(linear::predict(x_data, m, b, &mode))
+    Ok(linear::predict(&x_data, Some(m), Some(b), &mode))
 }
-
 #[pyfunction]
 fn predict_mlp(
     input: Vec<f32>,
@@ -72,6 +72,14 @@ fn train_mlp(
 fn convert_matrix_to_array(matrix: Vec<Vec<f32>>) -> PyResult<Vec<f32>> {
     Ok(matrix::matrix_to_array(matrix))
 }
+#[pyfunction]
+fn load_linear_weights() -> PyResult<(f32, f32)> {
+    Ok(data_converter::import_weights_linear())
+}
+#[pyfunction]
+fn export_linear_weights(m: f32, b: f32) -> PyResult<()> {
+    Ok(data_converter::export_weights_linear(m, b))
+}
 
 #[pymodule]
 fn better_tensorflow(m: &Bound<'_, PyModule>) -> PyResult<()> {
@@ -80,5 +88,7 @@ fn better_tensorflow(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(train_mlp, m)?)?;
     m.add_function(wrap_pyfunction!(train_linear, m)?)?;
     m.add_function(wrap_pyfunction!(convert_matrix_to_array, m)?)?;
+    m.add_function(wrap_pyfunction!(load_linear_weights, m)?)?;
+    m.add_function(wrap_pyfunction!(export_linear_weights, m)?)?;
     Ok(())
 }
