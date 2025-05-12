@@ -27,6 +27,6 @@ btf.train_mlp(
     0.01,
 )
 
-print(btf.predict_mlp([1], [], False))
-print(btf.predict_mlp([2], [], False))
-print(btf.predict_mlp([3], [], False))
+print(btf.predict_mlp([1], [], False, True))
+print(btf.predict_mlp([2], [], False, True))
+print(btf.predict_mlp([3], [], False, True))
