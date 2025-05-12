@@ -20,6 +20,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+DATASET_PATH = "python/api/data/music/"
+
 
 @app.post("/predict_mlp")
 async def predict_mlp(file: UploadFile):
@@ -38,11 +40,16 @@ async def predict_mlp(file: UploadFile):
 
 
 @app.post("/train_mlp")
-async def training_mlp(nb_epochs: int, hidden_layers: List[int], learning_rate: float):
+async def training_mlp(
+    nb_epochs: int,
+    hidden_layers: List[int],
+    learning_rate: float,
+    filter_cat: List[str],
+):
     print(hidden_layers)
-    dataset_path = "python/api/data/music/"
-    dataset = DataManager.load_dataset(dataset_path)
-    dataset_test = DataManager.load_dataset(dataset_path)
+
+    dataset = DataManager.load_dataset(DATASET_PATH, filter_cat)
+    dataset_test = DataManager.load_dataset(DATASET_PATH, filter_cat)
 
     now = datetime.now()
 
@@ -109,3 +116,8 @@ def get_results_data():
         )
 
     return {"results": final}
+
+
+@app.get("/get_dataset_cat")
+def get_dataset_cat():
+    return {"cat": DataManager.find_dataset_categories(DATASET_PATH)}
