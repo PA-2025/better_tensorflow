@@ -102,12 +102,14 @@ pub fn back_propagation(
     updated_layers
 }
 
-pub fn predict(data: Vec<f32>, mut all_layers: Vec<Vec<Vec<f32>>>, is_classification: bool) -> i32 {
+pub fn predict(data: Vec<f32>, mut all_layers: Vec<Vec<Vec<f32>>>, is_classification: bool, verbose: bool) -> i32 {
     if all_layers.len() == 0 {
         all_layers = data_converter::load_weights_mlp();
     }
     let results_layer = forward_propagation(all_layers.clone(), data, is_classification);
-    println!("{:?}", results_layer);
+    if verbose {
+        println!("{:?}", results_layer);
+    }
     if !is_classification {
         if results_layer.last().unwrap().len() != 0 {
             return *results_layer.last().unwrap().last().unwrap() as i32;
@@ -149,6 +151,7 @@ pub fn compute_accuracy_score(
                 dataset_validation[index_cat][index_data].clone(),
                 all_layers.clone(),
                 true,
+                false
             ) == index_cat as i32
             {
                 score += 1
