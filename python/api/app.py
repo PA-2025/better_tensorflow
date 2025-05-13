@@ -30,7 +30,7 @@ async def predict_mlp(file: UploadFile):
 
     data = DataManager.load_data("temp.mp3")
     data = btf.convert_matrix_to_array(data)
-    prediction = btf.predict_mlp(data, [], True)
+    prediction = btf.predict_mlp(data, [], True, True)
 
     f = open("dataset.txt", "r")
     cat = json.loads(f.read())

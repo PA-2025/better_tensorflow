@@ -9,7 +9,7 @@ use rand::Rng;
 pub fn init_weights(dim: i32) -> Vec<f32> {
     let mut w = vec![];
     for _ in 0..=dim {
-        w.push(rand::thread_rng().gen_range(-1..1) as f32);
+        w.push(rand::thread_rng().gen_range(-1. .. 1.));
     }
     w
 }
@@ -22,36 +22,33 @@ pub fn forward_propagation(
     let mut results_layer: Vec<Vec<f32>> = vec![];
 
     for layer_index in 0..all_layers.len() {
-        let mut result_neurons = vec![];
+        let mut result_neural = vec![];
 
         let mut input = if layer_index == 0 {
             data.clone()
         } else {
-            results_layer[layer_index - 1].clone()
+            results_layer.last().unwrap().clone()
         };
 
         input.push(1.0);
 
         for neuron_weights in &all_layers[layer_index] {
-            let mut sum = 0.0;
-            for (w, x) in neuron_weights.iter().zip(input.iter()) {
-                sum += w * x;
-            }
+            let sum = matrix::sum(input.clone(), neuron_weights.clone());
 
             let activated = if layer_index == all_layers.len() - 1 {
                 if is_classification {
-                    activation_function::tanh(sum)
+                    activation_function::sigmoid(sum)
                 } else {
                     sum
                 }
             } else {
-                activation_function::tanh(sum)
+                activation_function::sigmoid(sum)
             };
 
-            result_neurons.push(activated);
+            result_neural.push(activated);
         }
 
-        results_layer.push(result_neurons);
+        results_layer.push(result_neural);
     }
 
     results_layer
@@ -67,40 +64,45 @@ pub fn back_propagation(
     learning_rate: f32,
 ) -> Vec<Vec<Vec<f32>>> {
     let mut updated_layers = all_layers.clone();
+    let num_layers = all_layers.len();
 
-    let last_layer_index = all_layers.len() - 1;
+    let last_layer_index = num_layers - 1;
     for j in 0..all_layers[last_layer_index].len() {
-        delta[last_layer_index][j] = result_fastforward[last_layer_index][j] - output[j];
+        delta[last_layer_index][j] =
+            result_fastforward[last_layer_index][j] - output[j];
+
         if is_classification {
-            delta[last_layer_index][j] *= 1.0 - result_fastforward[last_layer_index][j].powi(2);
+            delta[last_layer_index][j] *=
+                1.0 - result_fastforward[last_layer_index][j].powi(2);
         }
     }
 
-    for layer_index in (1..=last_layer_index).rev() {
-        for i in 0..all_layers[layer_index - 1].len() {
+    for layer_index in (1..num_layers).rev() {
+        for neuron_index in 0..all_layers[layer_index - 1].len() {
             let mut total = 0.0;
-            for j in 0..all_layers[layer_index].len() {
-                total += all_layers[layer_index][j][i] * delta[layer_index][j];
+            for k in 0..all_layers[layer_index].len() {
+                total += all_layers[layer_index][k][neuron_index]
+                    * delta[layer_index][k];
             }
 
-            let output_prev = result_fastforward[layer_index - 1][i];
-            delta[layer_index - 1][i] = total * (1.0 - output_prev.powi(2));
+            total *= 1.0 - result_fastforward[layer_index - 1][neuron_index].powi(2);
+            delta[layer_index - 1][neuron_index] = total;
         }
     }
 
-    for layer_index in 0..all_layers.len() {
+    for layer_index in 0..num_layers {
         for neuron_index in 0..all_layers[layer_index].len() {
-            let mut input = if layer_index == 0 {
+            let mut inputs = if layer_index == 0 {
                 input_data.clone()
             } else {
                 result_fastforward[layer_index - 1].clone()
             };
 
-            input.push(1.0);
+            inputs.push(1.0);
 
-            for weight_index in 0..input.len() {
+            for weight_index in 0..inputs.len() {
                 updated_layers[layer_index][neuron_index][weight_index] -=
-                    learning_rate * delta[layer_index][neuron_index] * input[weight_index];
+                    learning_rate * delta[layer_index][neuron_index] * inputs[weight_index];
             }
         }
     }
@@ -108,12 +110,8 @@ pub fn back_propagation(
     updated_layers
 }
 
-pub fn predict(
-    data: Vec<f32>,
-    mut all_layers: Vec<Vec<Vec<f32>>>,
-    is_classification: bool,
-    verbose: bool,
-) -> i32 {
+
+pub fn predict(data: Vec<f32>, mut all_layers: Vec<Vec<Vec<f32>>>, is_classification: bool, verbose: bool) -> i32 {
     if all_layers.len() == 0 {
         all_layers = data_converter::load_weights_mlp();
     }
@@ -143,7 +141,7 @@ pub fn init_layers(nb_layers: Vec<i32>) -> Vec<Vec<Vec<f32>>> {
     for nb_layer_index in 1..nb_layers.len() {
         let mut layers = vec![];
         for _ in 0..nb_layers[nb_layer_index] {
-            layers.push(init_weights(nb_layers[nb_layer_index - 1] + 1));
+            layers.push(init_weights(nb_layers[nb_layer_index - 1]));
         }
         all_random_weights.push(layers)
     }
@@ -162,7 +160,7 @@ pub fn compute_accuracy_score(
                 dataset_validation[index_cat][index_data].clone(),
                 all_layers.clone(),
                 true,
-                false,
+                false
             ) == index_cat as i32
             {
                 score += 1
@@ -170,7 +168,7 @@ pub fn compute_accuracy_score(
             total += 1;
         }
     }
-    (score * 100 / total) as f32
+    (score * 100 / total ) as f32
 }
 
 pub fn training(
