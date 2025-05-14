@@ -7,6 +7,7 @@ target/
 *.pdb
 
 temp.mp3
+temp.png
 
 python/api/__pycache__/
 python/better_tensorflow/__pycache__/
@@ -17,3 +18,4 @@ dataset.txt
 app_database.db
 
 python/api/data/music/
+python/api/data/music_spec/
