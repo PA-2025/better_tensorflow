@@ -1,5 +1,4 @@
 use pyo3::prelude::*;
- // Pour PyResult, PyModule, et wrap_pyfunction!
 use pyo3::wrap_pyfunction;
 mod activation_function;
 mod data_converter;
@@ -12,7 +11,6 @@ mod linear;
 
 
 #[pyfunction]
-
 fn train_linear(
     x_data: Vec<f32>,
     y_data: Vec<f32>,
@@ -74,6 +72,12 @@ fn convert_matrix_to_array(matrix: Vec<Vec<f32>>) -> PyResult<Vec<f32>> {
     Ok(matrix::matrix_to_array(matrix))
 }
 #[pyfunction]
+fn convert_image_to_array(image: Vec<Vec<Vec<f32>>>) -> PyResult<Vec<f32>> {
+    Ok(matrix::convert_image_to_array(image))
+}
+
+
+#[pyfunction]
 fn load_linear_weights() -> PyResult<(f32, f32)> {
     Ok(data_converter::import_weights_linear())
 }
@@ -89,6 +93,7 @@ fn better_tensorflow(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(train_mlp, m)?)?;
     m.add_function(wrap_pyfunction!(train_linear, m)?)?;
     m.add_function(wrap_pyfunction!(convert_matrix_to_array, m)?)?;
+     m.add_function(wrap_pyfunction!(convert_image_to_array, m)?)?;
     m.add_function(wrap_pyfunction!(load_linear_weights, m)?)?;
     m.add_function(wrap_pyfunction!(export_linear_weights, m)?)?;
     Ok(())

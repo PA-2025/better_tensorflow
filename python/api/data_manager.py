@@ -1,11 +1,13 @@
-import librosa
-from librosa.util import fix_length
-from typing import List
 import better_tensorflow as btf
 import os
 import json
 from tqdm import tqdm
 from typing import Optional, List
+from pydub import AudioSegment
+import matplotlib.pyplot as plt
+from scipy.io import wavfile
+from tempfile import mktemp
+import cv2
 
 
 class DataManager:
@@ -27,23 +29,27 @@ class DataManager:
             files = os.listdir(dataset_path + folder)
             cat_dataset = []
             for file in files:
-                audio_data, sample_rate = librosa.load(
-                    f"{dataset_path}/{folder}/{file}", sr=None
+                mel_spectrogram = cv2.imread(
+                    f"{dataset_path}/{folder}/{file}",
                 )
-                mel_spectrogram = librosa.feature.melspectrogram(
-                    y=audio_data, sr=sample_rate
-                )
-                mel_spectrogram = fix_length(mel_spectrogram, size=shape)
-                mel_spectrogram = btf.convert_matrix_to_array(mel_spectrogram)
+                mel_spectrogram = btf.convert_image_to_array(mel_spectrogram)
                 cat_dataset.append(mel_spectrogram)
             dataset.append(cat_dataset)
         return dataset
 
     @staticmethod
     def load_data(data_path: str):
-        audio_data, sample_rate = librosa.load(f"{data_path}", sr=None)
-        mel_spectrogram = librosa.feature.melspectrogram(y=audio_data, sr=sample_rate)
-
+        mp3_audio = AudioSegment.from_file(data_path, format="mp3")
+        wname = mktemp(".wav")
+        mp3_audio.export(wname, format="wav")
+        FS, data = wavfile.read(wname)
+        if len(data.shape) > 1:
+            data = data.mean(axis=1)
+        plt.specgram(data, Fs=FS)
+        plt.axis("off")
+        plt.savefig("temp.png", format="png", bbox_inches="tight", pad_inches=0)
+        plt.close()
+        mel_spectrogram = cv2.imread("temp.png")
         return mel_spectrogram
 
     @staticmethod
