@@ -52,6 +52,7 @@ fn train_mlp(
     verbose: bool,
     save_in_db: bool,
     learning_rate: f32,
+    nb_epoch_to_save: i32
 ) -> PyResult<()> {
     Ok(mlp::training(
         dataset,
@@ -64,6 +65,7 @@ fn train_mlp(
         verbose,
         save_in_db,
         learning_rate,
+        nb_epoch_to_save
     ))
 }
 

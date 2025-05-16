@@ -25,6 +25,7 @@ btf.train_mlp(
     False,
     False,
     0.01,
+    10000,
 )
 
 print(btf.predict_mlp([1], [], False, True))
