@@ -45,6 +45,7 @@ async def training_mlp(
     hidden_layers: List[int],
     learning_rate: float,
     filter_cat: List[str],
+    nb_epoch_to_save: int = 10000,
 ):
     print(hidden_layers)
 
@@ -68,6 +69,7 @@ async def training_mlp(
         True,
         True,
         learning_rate=learning_rate,
+        nb_epoch_to_save=nb_epoch_to_save,
     )
 
     return {"training": "OK"}

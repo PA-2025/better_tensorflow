@@ -168,6 +168,7 @@ pub fn compute_accuracy_score(
             total += 1;
         }
     }
+    println!("{} / {}",score,total);
     (score * 100 / total ) as f32
 }
 
@@ -182,6 +183,7 @@ pub fn training(
     verbose: bool,
     save_in_db: bool,
     learning_rate: f32,
+    nb_epoch_to_save: i32
 ) {
     let mut layers: Vec<i32> = vec![dataset_input[0][0].len() as i32];
     for i in 0..hidden_layers.len() {
@@ -227,14 +229,14 @@ pub fn training(
             } else {
                 output_dataset.clone()
             },
-            all_layers,
+            all_layers.clone(),
             result_layers.clone(),
             &mut delta,
             dataset_input[index_cat][index_data].clone(),
             learning_rate,
         );
 
-        if save_in_db {
+        if save_in_db && epoch % nb_epoch_to_save == 0 {
             let mut accuracy = 0.;
             if dataset_validation.len() != 0 && is_classification {
                 accuracy = compute_accuracy_score(dataset_validation.clone(), all_layers.clone());
