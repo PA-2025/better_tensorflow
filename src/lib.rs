@@ -9,6 +9,10 @@ mod matrix;
 mod mlp;
 mod linear;
 
+mod svm;
+use crate::svm::{LinearSVM};
+use ndarray::{Array1, Array2};
+
 
 #[pyfunction]
 fn train_linear(
@@ -87,6 +91,34 @@ fn load_linear_weights() -> PyResult<(f32, f32)> {
 fn export_linear_weights(m: f32, b: f32) -> PyResult<()> {
     Ok(data_converter::export_weights_linear(m, b))
 }
+#[pyfunction]
+fn fit_linear_svm(
+    x: Vec<Vec<f64>>,
+    y: Vec<i32>,
+    lr: f64,
+    epochs: usize,
+    svm_lambda: f64,
+) -> PyResult<(Vec<f64>, f64)> {
+    let mut svm = LinearSVM::new(lr, epochs, svm_lambda);
+    svm.fit(x, y);
+    Ok((svm.weights.to_vec(), svm.bias))
+}
+
+#[pyfunction]
+fn predict_linear_svm(
+    x: Vec<Vec<f64>>,
+    weights: Vec<f64>,
+    bias: f64,
+) -> PyResult<Vec<i32>> {
+    let svm = LinearSVM {
+        weights: Array1::from(weights),
+        bias,
+        lr: 0.0,
+        epochs: 0,
+        svm_lambda: 0.0,
+    };
+    Ok(svm.predict(x))
+}
 
 #[pymodule]
 fn better_tensorflow(m: &Bound<'_, PyModule>) -> PyResult<()> {
@@ -98,5 +130,8 @@ fn better_tensorflow(m: &Bound<'_, PyModule>) -> PyResult<()> {
      m.add_function(wrap_pyfunction!(convert_image_to_array, m)?)?;
     m.add_function(wrap_pyfunction!(load_linear_weights, m)?)?;
     m.add_function(wrap_pyfunction!(export_linear_weights, m)?)?;
+    m.add_function(wrap_pyfunction!(fit_linear_svm, m)?)?;
+    m.add_function(wrap_pyfunction!(predict_linear_svm, m)?)?;
+    m.add_class::<svm::LinearSVM>()?;
     Ok(())
 }
