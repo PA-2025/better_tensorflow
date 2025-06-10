@@ -9,7 +9,7 @@ use rand::Rng;
 pub fn init_weights(dim: i32) -> Vec<f32> {
     let mut w = vec![];
     for _ in 0..=dim {
-        w.push(rand::thread_rng().gen_range(-1. .. 1.));
+        w.push(rand::thread_rng().gen_range(-1. ..1.));
     }
     w
 }
@@ -68,12 +68,10 @@ pub fn back_propagation(
 
     let last_layer_index = num_layers - 1;
     for j in 0..all_layers[last_layer_index].len() {
-        delta[last_layer_index][j] =
-            result_fastforward[last_layer_index][j] - output[j];
+        delta[last_layer_index][j] = result_fastforward[last_layer_index][j] - output[j];
 
         if is_classification {
-            delta[last_layer_index][j] *=
-                1.0 - result_fastforward[last_layer_index][j].powi(2);
+            delta[last_layer_index][j] *= 1.0 - result_fastforward[last_layer_index][j].powi(2);
         }
     }
 
@@ -81,8 +79,7 @@ pub fn back_propagation(
         for neuron_index in 0..all_layers[layer_index - 1].len() {
             let mut total = 0.0;
             for k in 0..all_layers[layer_index].len() {
-                total += all_layers[layer_index][k][neuron_index]
-                    * delta[layer_index][k];
+                total += all_layers[layer_index][k][neuron_index] * delta[layer_index][k];
             }
 
             total *= 1.0 - result_fastforward[layer_index - 1][neuron_index].powi(2);
@@ -110,8 +107,12 @@ pub fn back_propagation(
     updated_layers
 }
 
-
-pub fn predict(data: Vec<f32>, mut all_layers: Vec<Vec<Vec<f32>>>, is_classification: bool, verbose: bool) -> i32 {
+pub fn predict(
+    data: Vec<f32>,
+    mut all_layers: Vec<Vec<Vec<f32>>>,
+    is_classification: bool,
+    verbose: bool,
+) -> i32 {
     if all_layers.len() == 0 {
         all_layers = data_converter::load_weights_mlp();
     }
@@ -160,7 +161,7 @@ pub fn compute_accuracy_score(
                 dataset_validation[index_cat][index_data].clone(),
                 all_layers.clone(),
                 true,
-                false
+                false,
             ) == index_cat as i32
             {
                 score += 1
@@ -168,8 +169,8 @@ pub fn compute_accuracy_score(
             total += 1;
         }
     }
-    println!("{} / {}",score,total);
-    (score * 100 / total ) as f32
+    println!("{} / {}", score, total);
+    (score * 100 / total) as f32
 }
 
 pub fn training(
@@ -183,13 +184,18 @@ pub fn training(
     verbose: bool,
     save_in_db: bool,
     learning_rate: f32,
-    nb_epoch_to_save: i32
+    nb_epoch_to_save: i32,
 ) {
     let mut layers: Vec<i32> = vec![dataset_input[0][0].len() as i32];
     for i in 0..hidden_layers.len() {
         layers.push(hidden_layers[i]);
     }
-    layers.push(dataset_input.len() as i32);
+    if is_classification {
+        layers.push(dataset_input.len() as i32)
+    } else {
+        layers.push(1)
+    }
+
     let mut all_layers = init_layers(layers);
 
     let mut delta: Vec<Vec<f32>> = vec![];
