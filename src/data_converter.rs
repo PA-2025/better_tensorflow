@@ -102,36 +102,3 @@ pub fn import_weights_linear() -> (f32, f32) {
     }
     panic!("Invalid weight format for linear model");
 }
-pub fn export_weights_svm(weights: &Array1<f64>, bias: f64) {
-    let mut result_str = String::from("[[");
-    for w in weights {
-        result_str.push_str(&w.to_string());
-        result_str.push(',');
-    }
-    result_str.push_str(&bias.to_string());
-    result_str.push_str("]]");
-
-    data_manager::import_text_to_file("w_svm.weight", result_str)
-        .expect("Error during save weights for SVM");
-}
-pub fn import_weights_svm() -> (Array1<f64>, f64) {
-    let content = data_manager::load_text_to_file("w_svm.weight");
-    let clean = content.replace("[[", "").replace("]]", "");
-    let parts: Vec<&str> = clean.split(',').collect();
-
-    if parts.len() < 2 {
-        panic!("Invalid weight format for SVM");
-    }
-
-    let weights: Vec<f64> = parts[..parts.len() - 1]
-        .iter()
-        .map(|s| s.trim().parse::<f64>().expect("Error parsing weight"))
-        .collect();
-
-    let bias = parts[parts.len() - 1]
-        .trim()
-        .parse::<f64>()
-        .expect("Error parsing bias");
-
-    (Array1::from(weights), bias)
-}

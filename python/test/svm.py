@@ -1,22 +1,26 @@
-import numpy as np
-from better_tensorflow import LinearSVM
+from better_tensorflow import KernelSVM
 
+# === Données XOR ===
+X_xor = [
+    [0.0, 0.0],
+    [0.0, 1.0],
+    [1.0, 0.0],
+    [1.0, 1.0],
+]
+y_xor = [-1, 1, 1, -1]  # Sortie XOR encodée pour SVM
 
-def main():
-    X = [[2, 3], [1, 1], [2, 1], [5, 7], [6, 8], [7, 7]]
-    y = [-1, -1, -1, 1, 1, 1]
+X_test = X_xor
 
-    # Crée un modèle SVM linéaire
-    svm = LinearSVM(lr=0.01, epochs=100, svm_lambda=0.01)
+svm_rbf = KernelSVM("rbf", 2.0, lr=0.1, lambda_svm=0.01, epochs=200)
+svm_rbf.fit(X_xor, y_xor)
+preds_rbf = svm_rbf.predict(X_test)
 
-    # Entraîne le modèle
-    svm.fit(X, y)
+for x, pred in zip(X_test, preds_rbf):
+    print(f"Entrée: {x} => Prédiction: {pred}")
 
-    X_test = [[2, 3], [1, 1], [2, 1], [5, 7], [6, 8], [7, 7]]
+svm_poly = KernelSVM("poly", 2, lr=0.1, lambda_svm=0.01, epochs=200)
+svm_poly.fit(X_xor, y_xor)
+preds_poly = svm_poly.predict(X_test)
 
-    predictions = svm.predict(X_test)
-    print("Prédictions :", predictions)
-
-
-if __name__ == "__main__":
-    main()
+for x, pred in zip(X_test, preds_poly):
+    print(f"Entree: {x} => Prédiction: {pred}")
