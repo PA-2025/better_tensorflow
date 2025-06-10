@@ -185,7 +185,7 @@ pub fn training(
     save_in_db: bool,
     learning_rate: f32,
     nb_epoch_to_save: i32,
-) {
+) -> f32 {
     let mut layers: Vec<i32> = vec![dataset_input[0][0].len() as i32];
     for i in 0..hidden_layers.len() {
         layers.push(hidden_layers[i]);
@@ -255,11 +255,7 @@ pub fn training(
             database::insert_training_score(training_name.clone(), mse, accuracy, epoch)
                 .expect("Error during save record");
         }
-
-        /*data_manager::add_text_to_file(training_name.clone(), mse.to_string() + "\n")
-            .expect("Error: error during write train data");
-        data_manager::add_text_to_file(training_name.clone() + "_acc", accuracy.to_string() + "\n")
-            .expect("Error: error during write train data");*/
     }
     data_converter::export_weights_mlp(all_layers.clone());
+    compute_accuracy_score(dataset_validation.clone(), all_layers.clone())
 }

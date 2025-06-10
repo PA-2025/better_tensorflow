@@ -89,7 +89,7 @@ fn train_mlp(
     save_in_db: bool,
     learning_rate: f32,
     nb_epoch_to_save: i32,
-) -> PyResult<()> {
+) -> PyResult<(f32)> {
     Ok(mlp::training(
         dataset,
         dataset_validation,

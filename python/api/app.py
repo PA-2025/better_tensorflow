@@ -2,7 +2,6 @@ from fastapi import FastAPI, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List
 import better_tensorflow as btf
-import os
 import json
 from data_manager import DataManager
 from datetime import datetime
@@ -49,8 +48,7 @@ async def training_mlp(
 ):
     print(hidden_layers)
 
-    dataset = DataManager.load_dataset(DATASET_PATH, filter_cat)
-    dataset_test = DataManager.load_dataset(DATASET_PATH, filter_cat)
+    dataset, dataset_test = DataManager.load_dataset(DATASET_PATH, filter_cat)
 
     now = datetime.now()
 
