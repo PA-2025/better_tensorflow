@@ -257,5 +257,7 @@ pub fn training(
         }
     }
     data_converter::export_weights_mlp(all_layers.clone());
-    compute_accuracy_score(dataset_validation.clone(), all_layers.clone())
+    if dataset_validation.len() > 0 && is_classification {compute_accuracy_score(dataset_validation.clone(), all_layers.clone())}
+    else {-1.}
+
 }

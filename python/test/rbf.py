@@ -2,10 +2,11 @@ import better_tensorflow as btf
 
 dataset = [
     [[0, 0]],
-    [[1, 1]],
+    [[20, 20]],
+    [[40, 40]],
 ]
 
-btf.train_rbf(dataset, [], 1_000_000, 4, "file_name", True, False, False, 0.01, 10000)
+btf.train_rbf(dataset, [], [], 1, True, False, "file_name")
 
-print(btf.predict_rbf([1, 1], True, True))  # 1
-print(btf.predict_rbf([0, 0], True, True))  # 0
+print(btf.predict_rbf([0, 0], 1, True))  # 1
+print(btf.predict_rbf([20, 20], 1, True))  # 0

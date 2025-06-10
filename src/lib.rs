@@ -1,4 +1,3 @@
-use crate::mlp::training;
 use pyo3::prelude::*;
 use pyo3::wrap_pyfunction;
 mod activation_function;
@@ -36,33 +35,28 @@ fn predict_linear(x_data: Vec<f32>, m: f32, b: f32, mode: &str) -> PyResult<Vec<
 }
 
 #[pyfunction]
-fn predict_rbf(data: Vec<f32>, is_classification: bool, verbose: bool) -> PyResult<i32> {
-    Ok(rbf::predict_rbf(data, is_classification, verbose))
+fn predict_rbf(input_data: Vec<f32>, gamma: f32, is_classification: bool) -> PyResult<f32> {
+    Ok(rbf::predict_rbf(input_data, gamma, is_classification))
 }
+
 #[pyfunction]
 fn train_rbf(
     dataset_input: Vec<Vec<Vec<f32>>>,
     dataset_validation: Vec<Vec<Vec<f32>>>,
-    nb_epoch: i32,
-    nb_hidden: usize,
-    training_name: String,
+    output_dataset: Vec<f32>,
+    gamma: f32,
     is_classification: bool,
-    verbose: bool,
     save_in_db: bool,
-    learning_rate: f32,
-    nb_epoch_to_save: i32,
-) -> PyResult<()> {
+    training_name: String,
+) -> PyResult<(f32)> {
     Ok(rbf::train_rbf(
         dataset_input,
         dataset_validation,
-        nb_epoch,
-        nb_hidden,
-        training_name,
+        output_dataset,
+        gamma,
         is_classification,
-        verbose,
         save_in_db,
-        learning_rate,
-        nb_epoch_to_save,
+        training_name,
     ))
 }
 
