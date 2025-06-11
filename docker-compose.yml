@@ -1,0 +1,13 @@
+services:
+  mongo:
+    ports:
+      - ${MONGO_PORT}:27017
+    container_name: dkrcomp-mongo
+    restart: always
+    logging:
+      options:
+        max-size: 1g
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
+    image: mongo

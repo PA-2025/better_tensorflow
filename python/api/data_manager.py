@@ -1,6 +1,10 @@
+import base64
+
 import better_tensorflow as btf
 import os
 import json
+
+import numpy as np
 from tqdm import tqdm
 from typing import Optional, List, Tuple
 from pydub import AudioSegment
@@ -9,15 +13,54 @@ from scipy.io import wavfile
 from tempfile import mktemp
 import cv2
 import random
+import pymongo
 
 
 class DataManager:
+    @staticmethod
+    def load_dataset_from_mongo(
+        dataset_path: str,
+        filter_categories: Optional[List[str]] = None,
+        split: Optional[float] = 0.1,
+    ) -> Tuple[List[List], List[List]]:
+        print("Loading dataset from mongo")
+        client = pymongo.MongoClient("mongodb://mongo:pass@localhost:27017/")
+        db = client["dataset_db"]
+        collection = db["dataset_collection"]
+
+        dataset = []
+        categories = DataManager.find_dataset_categories(dataset_path)
+
+        for category in tqdm(categories):
+            if filter_categories and category not in filter_categories:
+                print(f"Skipping {category}...")
+                continue
+            cat_dataset = []
+            for document in collection.find({"category": category}):
+                image_data = document["image_data"]
+                mel_spectrogram = DataManager.convert_base64_to_image(image_data)
+                cat_dataset.append(mel_spectrogram)
+            dataset.append(cat_dataset)
+
+        return DataManager.split_dataset(dataset, split)
+
+    @staticmethod
+    def convert_base64_to_image(image_data: str) -> List:
+        image_bytes = base64.b64decode(image_data)
+        nparr = np.frombuffer(image_bytes, np.uint8)
+        mel_spectrogram = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        return btf.convert_image_to_array(mel_spectrogram)
+
     @staticmethod
     def load_dataset(
         dataset_path: str,
         filter_categories: Optional[List[str]] = None,
         split: Optional[float] = 0.1,
     ) -> Tuple[List[List], List[List]]:
+        if os.getenv("USE_MONGO") == "1":
+            return DataManager.load_dataset_from_mongo(
+                dataset_path, filter_categories, split
+            )
         dataset = []
         folders = os.listdir(dataset_path)
         f = open("dataset.txt", "w")

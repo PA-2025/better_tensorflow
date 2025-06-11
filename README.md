@@ -11,6 +11,7 @@ maturin build && pip install .
 ---
 
 ```bash
+pip install -r python/requirements.txt
 fastapi dev python/api/app.py
 ```
 
@@ -45,4 +46,23 @@ self.test_layers = [[4], [4, 4], [10], [4, 10]]
 ```bash
 export PYTHONPATH=$(pwd)
 py tools/test_better_model.py 4 10000
+```
+
+
+# Convert dataset to mongo and use it
+
+---
+
+```bash
+cp .env.exemple .env
+```
+```bash
+docker compose up -d
+```
+```bash
+py tools/import_dataset_to_mongo.py python/api/data/music_spec/
+```
+#### to use it in api
+```bash
+export USE_MONGO=1
 ```
