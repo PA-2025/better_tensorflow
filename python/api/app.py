@@ -40,11 +40,8 @@ async def predict_rbf(file: UploadFile):
 
 @app.post("/train_rbf")
 async def training_rbf(
-    nb_epochs: int,
-    hidden_layers: List[int],
-    learning_rate: float,
+    gamma: float,
     filter_cat: List[str],
-    nb_epoch_to_save: int = 10000,
 ):
     dataset, dataset_test = DataManager.load_dataset(DATASET_PATH, filter_cat)
 
@@ -53,14 +50,11 @@ async def training_rbf(
     btf.train_rbf(
         dataset,
         dataset_test,
-        nb_epochs,
-        hidden_layers[0],
+        [],
+        gamma,
+        True,
+        True,
         f"train/mlp_{now.strftime('%Y-%m-%d_%H-%M-%S')}",
-        True,
-        True,
-        True,
-        learning_rate=learning_rate,
-        nb_epoch_to_save=nb_epoch_to_save,
     )
 
     return {"training": "OK"}
@@ -102,7 +96,7 @@ async def training_mlp(
         hidden_layers,
         f"train/mlp_{now.strftime('%Y-%m-%d_%H-%M-%S')}",
         True,
-        True,
+        False,
         True,
         learning_rate=learning_rate,
         nb_epoch_to_save=nb_epoch_to_save,
