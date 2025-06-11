@@ -9,6 +9,10 @@ mod matrix;
 mod mlp;
 mod linear;
 
+mod svm_bis;
+
+use ndarray::{Array1, Array2};
+
 
 #[pyfunction]
 fn train_linear(
@@ -88,6 +92,8 @@ fn export_linear_weights(m: f32, b: f32) -> PyResult<()> {
     Ok(data_converter::export_weights_linear(m, b))
 }
 
+
+
 #[pymodule]
 fn better_tensorflow(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(predict_mlp, m)?)?;
@@ -98,5 +104,6 @@ fn better_tensorflow(m: &Bound<'_, PyModule>) -> PyResult<()> {
      m.add_function(wrap_pyfunction!(convert_image_to_array, m)?)?;
     m.add_function(wrap_pyfunction!(load_linear_weights, m)?)?;
     m.add_function(wrap_pyfunction!(export_linear_weights, m)?)?;
+    m.add_class::<svm_bis::KernelSVM>()?;
     Ok(())
 }

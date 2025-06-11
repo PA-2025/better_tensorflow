@@ -2,6 +2,8 @@ use std::fs::File;
 use std::io::{BufRead, BufWriter};
 use std::io::Write;
 use crate::data_manager;
+use ndarray::Array1;
+
 
 pub fn export_weights_mlp(data: Vec<Vec<Vec<f32>>>) {
     let mut result_str = String::from("");
