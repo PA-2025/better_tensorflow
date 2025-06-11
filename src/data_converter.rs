@@ -189,3 +189,29 @@ pub fn load_weights_rbf() -> (Vec<Vec<f32>>, Vec<f32>) {
 
     (centers, w)
 }
+
+pub fn export_weights_svm(alpha: &Vec<f64>, bias: f64, support_vectors: &Vec<Array1<f64>>, support_labels: &Vec<f64>) {
+    let mut result_str = String::new();
+
+    result_str.push_str(&format!("bias:{}\n", bias));
+    result_str.push_str("alpha:[");
+    result_str.push_str(&alpha.iter().map(|v| v.to_string()).collect::<Vec<_>>().join(","));
+    result_str.push_str("]\n");
+
+    result_str.push_str("support_vectors:[");
+    for vec in support_vectors {
+        result_str.push('[');
+        result_str.push_str(&vec.iter().map(|v| v.to_string()).collect::<Vec<_>>().join(","));
+        result_str.push_str("],");
+    }
+    result_str.push_str("]\n");
+
+    result_str.push_str("support_labels:[");
+    result_str.push_str(&support_labels.iter().map(|v| v.to_string()).collect::<Vec<_>>().join(","));
+    result_str.push_str("]\n");
+
+    data_manager::import_text_to_file("w_svm.weight", result_str)
+
+        .expect("Error during save weights");
+
+}

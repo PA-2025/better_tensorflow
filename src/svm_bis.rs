@@ -2,6 +2,7 @@ use ndarray::{Array1, Array2};
 use pyo3::prelude::*;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
+use crate::data_converter::export_weights_svm;
 
 /// Type de noyau
 
@@ -97,6 +98,8 @@ impl KernelSVM {
                 }
             }
         }
+        export_weights_svm(&self.alpha, self.bias, &self.support_vectors, &self.support_labels);
+
     }
 
     /// Prédiction pour un ensemble de données
@@ -121,4 +124,6 @@ impl KernelSVM {
     pub fn get_alpha(&self) -> Vec<f64> {
         self.alpha.clone()
     }
+
+
 }
