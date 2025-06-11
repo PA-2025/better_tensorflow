@@ -5,7 +5,7 @@ import better_tensorflow as btf
 import json
 from data_manager import DataManager
 from datetime import datetime
-import sqlite3
+from database_manager import DatabaseManager
 
 app = FastAPI()
 
@@ -113,47 +113,17 @@ async def training_mlp(
 
 @app.get("/get_results")
 def get_results():
-    con = sqlite3.connect("app_database.db")
-    cur = con.cursor()
-    res = cur.execute("select distinct training_name from training_data ")
-    rows = res.fetchall()
-    results = [row[0] for row in rows]
-    files = []
-    for r in results:
-        files.append(f"{r}_mse")
-        files.append(f"{r}_accuracy")
-    return {"files": files}
+    return {
+        "files": DatabaseManager.get_results() + DatabaseManager.get_results_mongo()
+    }
 
 
 @app.get("/get_results_data")
 def get_results_data():
-    con = sqlite3.connect("app_database.db")
-    cur = con.cursor()
-    res = cur.execute("select distinct training_name from training_data ")
-    rows = res.fetchall()
-    names = [row[0] for row in rows]
-    final = []
-
-    for file_name in names:
-        results = []
-        res = cur.execute(
-            "select mse, accuracy from training_data  where training_name = ? order by epoch",
-            (file_name,),
-        )
-        for line in res.fetchall():
-            results.append(
-                {
-                    "mse": line[0],
-                    "accuracy": line[1],
-                }
-            )
-
-        final.append({"name": f"{file_name}_mse", "data": [x["mse"] for x in results]})
-        final.append(
-            {"name": f"{file_name}_accuracy", "data": [x["accuracy"] for x in results]}
-        )
-
-    return {"results": final}
+    return {
+        "results": DatabaseManager.get_training_data()
+        + DatabaseManager.get_training_data_mongo()
+    }
 
 
 @app.get("/get_dataset_cat")
