@@ -10,6 +10,8 @@ mod mlp;
 mod linear;
 mod svm_bis;
 mod rbf;
+mod math;
+mod kmeans;
 
 #[pyfunction]
 fn train_linear(
