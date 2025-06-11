@@ -6,5 +6,6 @@ class DataPreProcess:
     @staticmethod
     def preprocess_image(image: np.ndarray) -> np.ndarray:
         image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        image = cv2.resize(image, (24, 24))
+        image = cv2.resize(image, (100, 100))
+        cv2.imwrite("debug.png", image)
         return image
