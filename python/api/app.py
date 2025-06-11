@@ -28,7 +28,7 @@ async def predict_rbf(file: UploadFile):
         f.write(await file.read())
 
     data = DataManager.load_data("temp.mp3")
-    data = btf.convert_image_to_array(data)
+    data = btf.convert_matrix_to_array(data.tolist())
     prediction = btf.predict_rbf(data, True, True)
 
     f = open("dataset.txt", "r")
@@ -72,7 +72,7 @@ async def predict_mlp(file: UploadFile):
         f.write(await file.read())
 
     data = DataManager.load_data("temp.mp3")
-    data = btf.convert_image_to_array(data)
+    data = btf.convert_matrix_to_array(data.tolist())
     prediction = btf.predict_mlp(data, [], True, True)
 
     f = open("dataset.txt", "r")

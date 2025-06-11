@@ -15,6 +15,8 @@ import cv2
 import random
 import pymongo
 
+from data_pre_process import DataPreProcess
+
 
 class DataManager:
     @staticmethod
@@ -76,7 +78,8 @@ class DataManager:
                 mel_spectrogram = cv2.imread(
                     f"{dataset_path}/{folder}/{file}",
                 )
-                mel_spectrogram = btf.convert_image_to_array(mel_spectrogram)
+                mel_spectrogram = DataPreProcess.preprocess_image(mel_spectrogram)
+                mel_spectrogram = btf.convert_matrix_to_array(mel_spectrogram.tolist())
                 cat_dataset.append(mel_spectrogram)
             dataset.append(cat_dataset)
         return DataManager.split_dataset(dataset, split)
@@ -115,6 +118,7 @@ class DataManager:
         plt.savefig("temp.png", format="png", bbox_inches="tight", pad_inches=0)
         plt.close()
         mel_spectrogram = cv2.imread("temp.png")
+        mel_spectrogram = DataPreProcess.preprocess_image(mel_spectrogram)
         return mel_spectrogram
 
     @staticmethod
