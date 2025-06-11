@@ -2,8 +2,6 @@ use std::fs::File;
 use std::io::{BufRead, BufWriter};
 use std::io::Write;
 use crate::data_manager;
-use ndarray::Array1;
-
 
 pub fn export_weights_mlp(data: Vec<Vec<Vec<f32>>>) {
     let mut result_str = String::from("");
@@ -101,4 +99,93 @@ pub fn import_weights_linear() -> (f32, f32) {
         }
     }
     panic!("Invalid weight format for linear model");
+}
+
+pub fn export_weights_rbf(centers: &Vec<Vec<f32>>, w: &Vec<f32>) {
+    let mut result_str = String::from("");
+    result_str.push('[');
+    for i in 0..centers.len() {
+        result_str.push('[');
+        for j in 0..centers[i].len() {
+            result_str.push_str(&centers[i][j].to_string());
+            result_str.push(',');
+        }
+        result_str.push(']');
+    }
+    result_str.push(']');
+    result_str.push('[');
+    for i in 0..w.len() {
+        result_str.push_str(&w[i].to_string());
+        result_str.push(',');
+    }
+    result_str.push(']');
+    data_manager::import_text_to_file("w_rbf.weight", result_str)
+        .expect("Error during save weights");
+}
+
+pub fn load_weights_rbf() -> (Vec<Vec<f32>>, Vec<f32>) {
+    let content = data_manager::load_text_to_file("w_rbf.weight");
+    let mut sections = vec![];
+    let mut current = String::new();
+    let mut count = 0;
+
+    for c in content.chars() {
+        if c == '[' {
+            if count > 0 {
+                current.push(c);
+            }
+            count += 1;
+        } else if c == ']' {
+            count -= 1;
+            if count > 0 {
+                current.push(c);
+            } else if count == 0 {
+                sections.push(current.clone());
+                current.clear();
+            }
+        } else {
+            if count > 0 {
+                current.push(c);
+            }
+        }
+    }
+
+    let centers_str = &sections[0];
+    let mut centers = vec![];
+
+    for part in centers_str
+        .split("][")
+        .map(|s| s.replace('[', "").replace(']', ""))
+    {
+        let center: Vec<f32> = part
+            .split(',')
+            .filter_map(|val| {
+                let trimmed = val.trim();
+                if !trimmed.is_empty() {
+                    Some(trimmed.parse::<f32>().expect("Error"))
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        if !center.is_empty() {
+            centers.push(center);
+        }
+    }
+
+    let w_str = &sections[1];
+    let w: Vec<f32> = w_str
+        .split(',')
+        .filter_map(|val| {
+            let trimmed = val.trim();
+            if !trimmed.is_empty() {
+                Some(trimmed.parse::<f32>().expect("Error"))
+            } else {
+                None
+            }
+        })
+        .collect();
+
+    (centers, w)
 }
