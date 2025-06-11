@@ -1,92 +1,4 @@
-use crate::{data_converter, database, loss};
-use rand::Rng;
-
-fn euclidean_distance_sq(x: &Vec<f32>, y: &Vec<f32>) -> f32 {
-    x.iter()
-        .zip(y.iter())
-        .map(|(xi, yi)| (xi - yi).powi(2))
-        .sum()
-}
-
-fn flatten_dataset(dataset: Vec<Vec<Vec<f32>>>) -> Vec<(Vec<f32>, usize)> {
-    let mut flattened_data = Vec::new();
-
-    for (class_idx, class_data) in dataset.iter().enumerate() {
-        for data_point in class_data {
-            flattened_data.push((data_point.clone(), class_idx));
-        }
-    }
-
-    flattened_data
-}
-
-pub fn lloyd_algorithm(
-    dataset: Vec<Vec<Vec<f32>>>,
-    num_centers: usize,
-    max_iter: usize,
-) -> Vec<Vec<f32>> {
-    let mut rng = rand::thread_rng();
-    let flattened_data = flatten_dataset(dataset);
-    let mut centers = Vec::new();
-    let mut labels = vec![0; flattened_data.len()];
-
-    for _ in 0..num_centers {
-        let random_index = rng.gen_range(0..flattened_data.len());
-        centers.push(flattened_data[random_index].0.clone());
-    }
-
-    let mut converged = false;
-    let mut iter = 0;
-
-    while !converged && iter < max_iter {
-        converged = true;
-
-        for (i, (data_point, _)) in flattened_data.iter().enumerate() {
-            let mut min_dist = f32::MAX;
-            let mut closest_center = 0;
-
-            for (j, center) in centers.iter().enumerate() {
-                let dist = euclidean_distance_sq(data_point, center);
-                if dist < min_dist {
-                    min_dist = dist;
-                    closest_center = j;
-                }
-            }
-
-            if labels[i] != closest_center {
-                labels[i] = closest_center;
-                converged = false;
-            }
-        }
-
-        let mut new_centers = vec![vec![0.0; flattened_data[0].0.len()]; num_centers];
-        let mut count = vec![0; num_centers];
-
-        for (i, (data_point, label)) in flattened_data.iter().enumerate() {
-            for j in 0..data_point.len() {
-                new_centers[*label][j] += data_point[j];
-            }
-            count[*label] += 1;
-        }
-
-        for i in 0..num_centers {
-            if count[i] > 0 {
-                for j in 0..new_centers[i].len() {
-                    new_centers[i][j] /= count[i] as f32;
-                }
-            }
-        }
-
-        centers = new_centers;
-        iter += 1;
-    }
-
-    centers
-}
-pub fn gaussian_kernel(x: &Vec<f32>, center: &Vec<f32>, gamma: f32) -> f32 {
-    let dist_sq = euclidean_distance_sq(x, center);
-    (-gamma * dist_sq).exp()
-}
+use crate::{data_converter, database, kmeans, math, matrix};
 
 pub fn forward_propagation_rbf(
     dataset: Vec<f32>,
@@ -98,7 +10,7 @@ pub fn forward_propagation_rbf(
     let mut result = 0.0;
 
     for (i, center) in centers.iter().enumerate() {
-        let activation = gaussian_kernel(&dataset, center, gamma);
+        let activation = math::gaussian_kernel(&dataset, center, gamma);
         result += weights[i] * activation;
     }
 
@@ -123,7 +35,7 @@ pub fn train_rbf(
     training_name: String,
 ) -> f32 {
     let num_centers = dataset_input.len();
-    let centers = lloyd_algorithm(dataset_input.clone(), num_centers, 100);
+    let centers = kmeans::kmeans(dataset_input.clone(), num_centers, 100);
 
     let mut matrix = Vec::new();
     let mut target_vector = Vec::new();
@@ -133,7 +45,7 @@ pub fn train_rbf(
         for input_data in category_data {
             let row: Vec<f32> = centers
                 .iter()
-                .map(|center| gaussian_kernel(input_data, center, gamma))
+                .map(|center| math::gaussian_kernel(input_data, center, gamma))
                 .collect();
             matrix.push(row);
 
@@ -151,8 +63,8 @@ pub fn train_rbf(
         }
     }
 
-    let pseudo_inv = pseudo_inverse(&matrix);
-    let weights = multiply_matrix_vector(&pseudo_inv, &target_vector);
+    let pseudo_inv = matrix::pseudo_inverse(&matrix);
+    let weights = matrix::multiply_matrix_vector(&pseudo_inv, &target_vector);
 
     let accuracy = compute_accuracy_score(
         dataset_validation.clone(),
@@ -216,37 +128,4 @@ pub fn predict_rbf(input_data: Vec<f32>, gamma: f32, is_classification: bool) ->
     let output = forward_propagation_rbf(input_data, centers, weights, gamma, is_classification);
 
     output
-}
-
-fn pseudo_inverse(matrix: &Vec<Vec<f32>>) -> Vec<Vec<f32>> {
-    let n = matrix.len();
-    let m = matrix[0].len();
-
-    let mut transposed = vec![vec![0.0; n]; m];
-    for i in 0..n {
-        for j in 0..m {
-            transposed[j][i] = matrix[i][j];
-        }
-    }
-
-    let mut result = vec![vec![0.0; n]; m];
-    for i in 0..m {
-        for j in 0..n {
-            result[i][j] = transposed[i][j];
-        }
-    }
-
-    result
-}
-
-fn multiply_matrix_vector(matrix: &Vec<Vec<f32>>, vector: &Vec<f32>) -> Vec<f32> {
-    let mut result = vec![0.0; matrix[0].len()];
-
-    for j in 0..matrix[0].len() {
-        for i in 0..matrix.len() {
-            result[j] += matrix[i][j] * vector[i];
-        }
-    }
-
-    result
 }
