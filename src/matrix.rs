@@ -1,62 +1,98 @@
 pub fn matrix_to_array(matrix: Vec<Vec<f32>>) -> Vec<f32> {
-    let mut array = vec![];
-    for i in 0..matrix.len() {
-        for j in 0..matrix[i].len() {
-            array.push(matrix[i][j]);
-        }
-    }
-    array
+    matrix.into_iter().flatten().collect()
 }
 
 pub fn convert_image_to_array(image: Vec<Vec<Vec<f32>>>) -> Vec<f32> {
-    let mut array = vec![];
-    for i in 0..image.len() {
-        for j in 0..image[i].len() {
-            for k in 0..image[i][j].len() {
-                array.push(image[i][j][k]);
-            }
-        }
-    }
-    array
+    image.into_iter().flatten().flatten().collect()
 }
 
 pub fn sum(input_array: Vec<f32>, weights_array: Vec<f32>) -> f32 {
-    let mut result: f32 = 0.;
-    for i in 0..input_array.len() {
-        result += input_array[i] * weights_array[i];
-    }
-    result
-}
-
-pub fn pseudo_inverse(matrix: &Vec<Vec<f32>>) -> Vec<Vec<f32>> {
-    let n = matrix.len();
-    let m = matrix[0].len();
-
-    let mut transposed = vec![vec![0.0; n]; m];
-    for i in 0..n {
-        for j in 0..m {
-            transposed[j][i] = matrix[i][j];
-        }
-    }
-
-    let mut result = vec![vec![0.0; n]; m];
-    for i in 0..m {
-        for j in 0..n {
-            result[i][j] = transposed[i][j];
-        }
-    }
-
-    result
+    input_array.iter().zip(weights_array.iter()).map(|(x, w)| x * w).sum()
 }
 
 pub fn multiply_matrix_vector(matrix: &Vec<Vec<f32>>, vector: &Vec<f32>) -> Vec<f32> {
-    let mut result = vec![0.0; matrix[0].len()];
+    matrix.iter()
+        .map(|row| row.iter().zip(vector.iter()).map(|(x, w)| x * w).sum())
+        .collect()
+}
 
-    for j in 0..matrix[0].len() {
-        for i in 0..matrix.len() {
-            result[j] += matrix[i][j] * vector[i];
+pub fn transpose(matrix: &Vec<Vec<f32>>) -> Vec<Vec<f32>> {
+    let rows = matrix.len();
+    let cols = matrix[0].len();
+    let mut result = vec![vec![0.0; rows]; cols];
+
+    for i in 0..rows {
+        for j in 0..cols {
+            result[j][i] = matrix[i][j];
         }
     }
 
     result
+}
+
+pub fn multiply_matrices(a: &Vec<Vec<f32>>, b: &Vec<Vec<f32>>) -> Vec<Vec<f32>> {
+    let rows = a.len();
+    let cols = b[0].len();
+    let shared = a[0].len();
+    assert_eq!(shared, b.len(), "Dimensions incompatibles pour multiplication");
+
+    let mut result = vec![vec![0.0; cols]; rows];
+
+    for i in 0..rows {
+        for j in 0..cols {
+            for k in 0..shared {
+                result[i][j] += a[i][k] * b[k][j];
+            }
+        }
+    }
+
+    result
+}
+
+pub fn inverse(matrix: &Vec<Vec<f32>>) -> Vec<Vec<f32>> {
+    let n = matrix.len();
+    assert_eq!(n, matrix[0].len(), "La matrice doit être carrée pour être inversée");
+
+    let mut a = matrix.clone();
+    let mut inv = vec![vec![0.0; n]; n];
+    for i in 0..n {
+        inv[i][i] = 1.0;
+    }
+
+    for i in 0..n {
+        let diag = a[i][i];
+        if diag == 0.0 {
+            panic!("Pivot nul détecté, matrice non inversible");
+        }
+
+        for j in 0..n {
+            a[i][j] /= diag;
+            inv[i][j] /= diag;
+        }
+
+        for k in 0..n {
+            if k != i {
+                let factor = a[k][i];
+                for j in 0..n {
+                    a[k][j] -= factor * a[i][j];
+                    inv[k][j] -= factor * inv[i][j];
+                }
+            }
+        }
+    }
+
+    inv
+}
+
+pub fn regularized_pseudo_inverse(phi: &Vec<Vec<f32>>, lambda: f32) -> Vec<Vec<f32>> {
+    let phi_t = transpose(phi);
+    let phi_t_phi = multiply_matrices(&phi_t, phi);
+
+    let mut regularized = phi_t_phi.clone();
+    for i in 0..regularized.len() {
+        regularized[i][i] += lambda;
+    }
+
+    let inv = inverse(&regularized);
+    multiply_matrices(&inv, &phi_t)
 }

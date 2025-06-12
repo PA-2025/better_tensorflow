@@ -1,18 +1,17 @@
 use crate::{data_converter, database, kmeans, math, matrix};
 
 pub fn forward_propagation_rbf(
-    dataset: Vec<f32>,
+    input: Vec<f32>,
     centers: Vec<Vec<f32>>,
     weights: Vec<f32>,
     gamma: f32,
     is_classification: bool,
 ) -> f32 {
-    let mut result = 0.0;
-
-    for (i, center) in centers.iter().enumerate() {
-        let activation = math::gaussian_kernel(&dataset, center, gamma);
-        result += weights[i] * activation;
-    }
+    let result: f32 = centers
+        .iter()
+        .zip(weights.iter())
+        .map(|(center, w)| w * math::gaussian_kernel(&input, center, gamma))
+        .sum();
 
     if is_classification {
         if result >= 0.0 {
@@ -34,7 +33,7 @@ pub fn train_rbf(
     save_in_db: bool,
     training_name: String,
 ) -> f32 {
-    let num_centers = dataset_input.len();
+    let num_centers: usize = dataset_input.iter().map(|v| v.len()).sum();
     let centers = kmeans::kmeans(dataset_input.clone(), num_centers, 100);
 
     let mut matrix = Vec::new();
@@ -50,11 +49,7 @@ pub fn train_rbf(
             matrix.push(row);
 
             let target = if is_classification {
-                if index_cat == 0 {
-                    1.0
-                } else {
-                    -1.0
-                }
+                if index_cat == 0 { 1.0 } else { -1.0 }
             } else {
                 output_dataset[global_index]
             };
@@ -63,19 +58,19 @@ pub fn train_rbf(
         }
     }
 
-    let pseudo_inv = matrix::pseudo_inverse(&matrix);
-    let weights = matrix::multiply_matrix_vector(&pseudo_inv, &target_vector);
+    let reg_pinv = matrix::regularized_pseudo_inverse(&matrix, 0.1);
+    let weights = matrix::multiply_matrix_vector(&reg_pinv, &target_vector);
 
     let accuracy = compute_accuracy_score(
-        dataset_validation.clone(),
-        centers.clone(),
-        weights.clone(),
+        &dataset_validation,
+        &centers,
+        &weights,
         gamma,
         is_classification,
     );
 
     if save_in_db {
-        database::insert_training_score(training_name.clone(), 0., accuracy, 0)
+        database::insert_training_score(training_name, 0., accuracy, 0)
             .expect("Error during save record");
     }
 
@@ -84,15 +79,14 @@ pub fn train_rbf(
 }
 
 pub fn compute_accuracy_score(
-    dataset_validation: Vec<Vec<Vec<f32>>>,
-    centers: Vec<Vec<f32>>,
-    weights: Vec<f32>,
+    dataset_validation: &Vec<Vec<Vec<f32>>>,
+    centers: &Vec<Vec<f32>>,
+    weights: &Vec<f32>,
     gamma: f32,
     is_classification: bool,
 ) -> f32 {
     let mut score = 0;
     let mut total = 0;
-    let mut global_index = 0;
 
     for (index_cat, category_data) in dataset_validation.iter().enumerate() {
         for input_data in category_data {
@@ -115,7 +109,6 @@ pub fn compute_accuracy_score(
                 score += 1;
             }
             total += 1;
-            global_index += 1;
         }
     }
 
@@ -124,8 +117,5 @@ pub fn compute_accuracy_score(
 
 pub fn predict_rbf(input_data: Vec<f32>, gamma: f32, is_classification: bool) -> f32 {
     let (centers, weights) = data_converter::load_weights_rbf();
-
-    let output = forward_propagation_rbf(input_data, centers, weights, gamma, is_classification);
-
-    output
+    forward_propagation_rbf(input_data, centers, weights, gamma, is_classification)
 }
