@@ -12,7 +12,9 @@ y_xor = [-1, 1, 1, -1]  # Sortie XOR encodée pour SVM
 X_test = X_xor
 
 svm_rbf = KernelSVM("rbf", 2.0, lr=0.1, lambda_svm=0.01, epochs=200)
+print("=== SVM avec noyau RBF ===")
 svm_rbf.fit(X_xor, y_xor)
+print("=== Prédictions ===")
 preds_rbf = svm_rbf.predict(X_test)
 
 for x, pred in zip(X_test, preds_rbf):

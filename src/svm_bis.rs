@@ -2,8 +2,8 @@ use ndarray::{Array1, Array2};
 use pyo3::prelude::*;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
+use crate::data_converter::{export_weights_svm, import_weights_svm} ;
 
-/// Type de noyau
 
 enum Kernel {
     RBF(f64),
@@ -60,6 +60,13 @@ impl KernelSVM {
             support_labels: vec![],
         })
     }
+    pub fn load_weights(&mut self) {
+        let (alpha, bias, support_vectors, support_labels) = import_weights_svm();
+        self.alpha = alpha;
+        self.bias = bias;
+        self.support_vectors = support_vectors;
+        self.support_labels = support_labels;
+    }
 
     /// Entraînement du modèle
     pub fn fit(&mut self, x: Vec<Vec<f64>>, y: Vec<i32>) {
@@ -97,22 +104,33 @@ impl KernelSVM {
                 }
             }
         }
+        export_weights_svm(&self.alpha, self.bias, &self.support_vectors, &self.support_labels);
+
     }
 
-    /// Prédiction pour un ensemble de données
+
     pub fn predict(&self, x: Vec<Vec<f64>>) -> Vec<i32> {
-        let x = Array2::from_shape_vec((x.len(), x[0].len()), x.into_iter().flatten().collect()).unwrap();
+        // Recharger les poids à chaque prédiction
+        let (alpha, bias, support_vectors, support_labels) = import_weights_svm();
+
+        let x = Array2::from_shape_vec((x.len(), x[0].len()), x.into_iter().flatten().collect())
+            .expect("Erreur dans le format des données d'entrée");
 
         x.outer_iter()
             .map(|xi| {
                 let mut sum = 0.0;
-                for (alpha_i, (xj, &yj)) in self.alpha.iter().zip(self.support_vectors.iter().zip(&self.support_labels)) {
+                for (alpha_i, (xj, &yj)) in alpha.iter().zip(support_vectors.iter().zip(&support_labels)) {
                     sum += alpha_i * yj * self.kernel.compute(&xi.to_owned(), xj);
                 }
-                if sum + self.bias >= 0.0 { 1 } else { -1 }
+                if sum + bias >= 0.0 {
+                    1
+                } else {
+                    -1
+                }
             })
             .collect()
     }
+
 
     pub fn get_bias(&self) -> f64 {
         self.bias
@@ -121,4 +139,6 @@ impl KernelSVM {
     pub fn get_alpha(&self) -> Vec<f64> {
         self.alpha.clone()
     }
+
+
 }
