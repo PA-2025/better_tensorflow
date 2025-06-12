@@ -1,28 +1,34 @@
+import better_tensorflow as bt
 from datetime import datetime
 import os
-import rosenblatt_py  # nom du module compilé PyO3
 
-# Données exemples (régression ou classification)
+# EX de dataset
 x_data = [4.0, 5.0, 6.0]
 y_data = [4.0, 5.0, 6.0]
 
-now = datetime.now()
+# nom = (date + heure)
 os.makedirs("train", exist_ok=True)
-training_name = f"train/rosenblatt_{now.strftime('%Y-%m-%d_%H-%M-%S')}"
+training_name = f"train/rosenblatt_test_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
-# Crée un fichier vide juste pour l'exemple (comme dans ton snippet)
-open(training_name, "a").close()
+print(f"Début de l'entraînement avec le fichier : {training_name}")
 
-# Entraîner le modèle Rosenblatt (mode regression ici)
-rosenblatt_py.train_rosenblatt_py(
-    x_data,
-    y_data,
-    "regression",
-    True,
-    100000,
-    training_name
+# Training
+loss = bt.train_rosenblatt_py(
+    x_data=x_data,
+    y_data=y_data,
+    mode="regression",
+    save_in_db=True,
+    training_name=training_name,
 )
+print(f"Entraînement terminé avec une perte de : {loss:.6f}")
 
-# Faire une prédiction avec le modèle entraîné (on passe None pour utiliser poids/biais sauvegardés)
-predictions = rosenblatt_py.predict_rosenblatt_py(x_data, None, None, "regression")
-print("Prédictions :", predictions)
+# Prediction (les poids seront importés auto)
+preds = bt.predict_rosenblatt_py(x_data, mode="regression")
+print("Prédictions obtenues :")
+for i, (x, pred, y) in enumerate(zip(x_data, preds, y_data), 1):
+    print(f"  Point {i} : Entrée={x}, Prédiction={pred:.4f}, Réel={y}")
+
+# Evaluation du modele : calcul de l'erreur absolue moyenne
+errors = [abs(pred - y) for pred, y in zip(preds, y_data)]
+mean_error = sum(errors) / len(errors)
+print(f"Erreur absolue moyenne : {mean_error:.6f}")
