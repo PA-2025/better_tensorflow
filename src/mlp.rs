@@ -34,15 +34,14 @@ pub fn forward_propagation(
 
         for neuron_weights in &all_layers[layer_index] {
             let sum = matrix::sum(input.clone(), neuron_weights.clone());
-
-            let activated = if layer_index == all_layers.len() - 1 {
+            let activated = if layer_index == all_layers.len() -1  {
                 if is_classification {
-                    activation_function::sigmoid(sum)
+                    activation_function::tanh(sum)
                 } else {
                     sum
                 }
             } else {
-                activation_function::sigmoid(sum)
+                activation_function::tanh(sum)
             };
 
             result_neural.push(activated);
@@ -112,7 +111,7 @@ pub fn predict(
     mut all_layers: Vec<Vec<Vec<f32>>>,
     is_classification: bool,
     verbose: bool,
-) -> i32 {
+) -> f32 {
     if all_layers.len() == 0 {
         all_layers = data_converter::load_weights_mlp();
     }
@@ -122,9 +121,9 @@ pub fn predict(
     }
     if !is_classification {
         if results_layer.last().unwrap().len() != 0 {
-            return *results_layer.last().unwrap().last().unwrap() as i32;
+            return *results_layer.last().unwrap().last().unwrap();
         }
-        return -1;
+        return -1.;
     }
     let mut index_good_neural = 0;
     let mut max_result_neural = 0.;
@@ -134,7 +133,7 @@ pub fn predict(
             index_good_neural = index_neural as i32;
         }
     }
-    index_good_neural
+    index_good_neural as f32
 }
 
 pub fn init_layers(nb_layers: Vec<i32>) -> Vec<Vec<Vec<f32>>> {
@@ -162,7 +161,7 @@ pub fn compute_accuracy_score(
                 all_layers.clone(),
                 true,
                 false,
-            ) == index_cat as i32
+            ) as i32 == index_cat as i32
             {
                 score += 1
             }
