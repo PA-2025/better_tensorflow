@@ -26,4 +26,3 @@ preds_poly = svm_poly.predict(X_test)
 
 for x, pred in zip(X_test, preds_poly):
     print(f"Entree: {x} => Prédiction: {pred}")
-
