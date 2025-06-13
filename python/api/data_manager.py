@@ -17,6 +17,8 @@ import pymongo
 
 from data_pre_process import DataPreProcess
 
+DURATION_MAX = 10
+
 
 class DataManager:
     @staticmethod
@@ -106,20 +108,36 @@ class DataManager:
         return dataset_train, dataset_test
 
     @staticmethod
-    def load_data(data_path: str):
+    def split_audio(
+        audio: AudioSegment, duration_max=DURATION_MAX
+    ) -> List[AudioSegment]:
+        chunks = []
+        start = 0
+        while start < len(audio):
+            end = min(start + duration_max * 1000, len(audio))
+            chunks.append(audio[start:end])
+            start = end
+        return chunks
+
+    @staticmethod
+    def load_data(data_path: str) -> List[np.ndarray]:
         mp3_audio = AudioSegment.from_file(data_path, format="mp3")
-        wname = mktemp(".wav")
-        mp3_audio.export(wname, format="wav")
-        FS, data = wavfile.read(wname)
-        if len(data.shape) > 1:
-            data = data.mean(axis=1)
-        plt.specgram(data, Fs=FS)
-        plt.axis("off")
-        plt.savefig("temp.png", format="png", bbox_inches="tight", pad_inches=0)
-        plt.close()
-        mel_spectrogram = cv2.imread("temp.png")
-        mel_spectrogram = DataPreProcess.preprocess_image(mel_spectrogram)
-        return mel_spectrogram
+        audio_chunk = DataManager.split_audio(mp3_audio)
+        all_chunk = []
+        for audio in audio_chunk:
+            wname = mktemp(".wav")
+            audio.export(wname, format="wav")
+            FS, data = wavfile.read(wname)
+            if len(data.shape) > 1:
+                data = data.mean(axis=1)
+            plt.specgram(data, Fs=FS)
+            plt.axis("off")
+            plt.savefig("temp.png", format="png", bbox_inches="tight", pad_inches=0)
+            plt.close()
+            mel_spectrogram = cv2.imread("temp.png")
+            mel_spectrogram = DataPreProcess.preprocess_image(mel_spectrogram)
+            all_chunk.append(mel_spectrogram)
+        return all_chunk
 
     @staticmethod
     def find_dataset_categories(dataset_path: str) -> List[str]:

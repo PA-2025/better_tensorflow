@@ -1,3 +1,4 @@
+import numpy as np
 from fastapi import FastAPI, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List
@@ -28,14 +29,17 @@ async def predict_rbf(file: UploadFile):
         f.write(await file.read())
 
     data = DataManager.load_data("temp.mp3")
-    data = btf.convert_matrix_to_array(data.tolist())
-    prediction = btf.predict_rbf(data, True, True)
+    results = []
+    for d in data:
+        array = btf.convert_matrix_to_array(d.tolist())
+        prediction = btf.predict_rbf(array, True, True)
+        results.append(prediction)
 
     f = open("dataset.txt", "r")
     cat = json.loads(f.read())
     f.close()
 
-    return {"prediction": cat[prediction]}
+    return {"prediction": cat[np.argmax(results)]}
 
 
 @app.post("/train_rbf")
@@ -66,14 +70,19 @@ async def predict_mlp(file: UploadFile):
         f.write(await file.read())
 
     data = DataManager.load_data("temp.mp3")
-    data = btf.convert_matrix_to_array(data.tolist())
-    prediction = btf.predict_mlp(data, [], True, True)
+    results = []
+    for d in data:
+        array = btf.convert_matrix_to_array(d.tolist())
+        prediction = btf.predict_mlp(array, [], True, True)
+        results.append(prediction)
 
     f = open("dataset.txt", "r")
     cat = json.loads(f.read())
     f.close()
 
-    return {"prediction": cat[prediction]}
+    print(results)
+
+    return {"prediction": cat[np.argmax(results)]}
 
 
 @app.post("/train_mlp")
