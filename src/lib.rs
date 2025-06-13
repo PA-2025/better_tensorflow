@@ -68,7 +68,7 @@ fn predict_mlp(
     all_layers: Vec<Vec<Vec<f32>>>,
     is_classification: bool,
     verbose: bool,
-) -> PyResult<i32> {
+) -> PyResult<f32> {
     Ok(mlp::predict(input, all_layers, is_classification, verbose))
 }
 

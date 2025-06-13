@@ -1,7 +1,7 @@
 import better_tensorflow as btf
 import os
 
-dataset = [
+"""dataset = [
     [[0, 0], [0, 1]],
     [[1, 0], [1, 1]],
 ]
@@ -30,4 +30,16 @@ btf.train_mlp(
 )
 
 print(btf.predict_mlp([1, 1, 1], [], True, True))  # 3
-print(btf.predict_mlp([0, 1, 1], [], True, True))  # 2
+print(btf.predict_mlp([0, 1, 1], [], True, True))  # 2"""
+
+import numpy as np
+
+X = np.array([[1], [2]])
+Y = np.array([2, 4])
+
+x_mlp = [[[20]], [[40]]]
+
+btf.train_mlp(x_mlp, [], [20, 40], 100, [], "", False, False, False, 0.001, 10000)
+
+print(btf.predict_mlp([1], [], False, True))  # 2
+print(btf.predict_mlp([2], [], False, True))  # 3
