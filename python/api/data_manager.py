@@ -15,7 +15,7 @@ import cv2
 import random
 import pymongo
 
-from data_pre_process import DataPreProcess
+from python.api.data_pre_process import DataPreProcess
 
 DURATION_MAX = 10
 
@@ -60,6 +60,7 @@ class DataManager:
         dataset_path: str,
         filter_categories: Optional[List[str]] = None,
         split: Optional[float] = 0.1,
+        size: Tuple[float, float] = (50, 37),
     ) -> Tuple[List[List], List[List]]:
         if os.getenv("USE_MONGO") == "1":
             return DataManager.load_dataset_from_mongo(
@@ -80,7 +81,9 @@ class DataManager:
                 mel_spectrogram = cv2.imread(
                     f"{dataset_path}/{folder}/{file}",
                 )
-                mel_spectrogram = DataPreProcess.preprocess_image(mel_spectrogram)
+                mel_spectrogram = DataPreProcess.preprocess_image(
+                    mel_spectrogram, size=size
+                )
                 mel_spectrogram = btf.convert_matrix_to_array(mel_spectrogram.tolist())
                 cat_dataset.append(mel_spectrogram)
             dataset.append(cat_dataset)
@@ -135,7 +138,9 @@ class DataManager:
             plt.savefig("temp.png", format="png", bbox_inches="tight", pad_inches=0)
             plt.close()
             mel_spectrogram = cv2.imread("temp.png")
-            mel_spectrogram = DataPreProcess.preprocess_image(mel_spectrogram)
+            mel_spectrogram = DataPreProcess.preprocess_image(
+                mel_spectrogram, size=(50, 37)
+            )
             all_chunk.append(mel_spectrogram)
         return all_chunk
 
