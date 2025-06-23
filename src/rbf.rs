@@ -7,11 +7,10 @@ pub fn forward_propagation_rbf(
     gamma: f32,
     is_classification: bool,
 ) -> f32 {
-    let result: f32 = centers
-        .iter()
-        .zip(weights.iter())
-        .map(|(center, w)| w * math::gaussian_kernel(&input, center, gamma))
-        .sum();
+    let mut result: f32 = 0.0;
+    for (center, w) in centers.iter().zip(weights.iter()) {
+        result += w * math::gaussian_kernel(&input, center, gamma);
+    }
 
     if is_classification {
         if result >= 0.0 {
@@ -28,28 +27,32 @@ pub fn train_rbf(
     dataset_input: Vec<Vec<Vec<f32>>>,
     dataset_validation: Vec<Vec<Vec<f32>>>,
     output_dataset: Vec<f32>,
+    number_clusters: i32,
     gamma: f32,
     is_classification: bool,
     save_in_db: bool,
     training_name: String,
 ) -> f32 {
-    let num_centers: usize = dataset_input.iter().map(|v| v.len()).sum();
-    let centers = kmeans::kmeans(dataset_input.clone(), num_centers, 100);
+    let centers = kmeans::kmeans(dataset_input.clone(), number_clusters as usize, 100);
 
-    let mut matrix = Vec::new();
-    let mut target_vector = Vec::new();
+    let mut matrix = vec![];
+    let mut target_vector = vec![];
     let mut global_index = 0;
 
     for (index_cat, category_data) in dataset_input.iter().enumerate() {
         for input_data in category_data {
-            let row: Vec<f32> = centers
-                .iter()
-                .map(|center| math::gaussian_kernel(input_data, center, gamma))
-                .collect();
+            let mut row: Vec<f32> = vec![];
+            for center in &centers {
+                row.push(math::gaussian_kernel(input_data, center, gamma));
+            }
             matrix.push(row);
 
             let target = if is_classification {
-                if index_cat == 0 { 1.0 } else { -1.0 }
+                if index_cat == 0 {
+                    1.0
+                } else {
+                    -1.0
+                }
             } else {
                 output_dataset[global_index]
             };

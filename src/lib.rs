@@ -4,14 +4,14 @@ mod activation_function;
 mod data_converter;
 mod data_manager;
 mod database;
+mod kmeans;
+mod linear;
 mod loss;
+mod math;
 mod matrix;
 mod mlp;
-mod linear;
-mod svm_bis;
 mod rbf;
-mod math;
-mod kmeans;
+mod svm_bis;
 
 #[pyfunction]
 fn train_linear(
@@ -46,6 +46,7 @@ fn train_rbf(
     dataset_input: Vec<Vec<Vec<f32>>>,
     dataset_validation: Vec<Vec<Vec<f32>>>,
     output_dataset: Vec<f32>,
+    number_clusters: i32,
     gamma: f32,
     is_classification: bool,
     save_in_db: bool,
@@ -55,6 +56,7 @@ fn train_rbf(
         dataset_input,
         dataset_validation,
         output_dataset,
+        number_clusters,
         gamma,
         is_classification,
         save_in_db,
@@ -118,8 +120,6 @@ fn load_linear_weights() -> PyResult<(f32, f32)> {
 fn export_linear_weights(m: f32, b: f32) -> PyResult<()> {
     Ok(data_converter::export_weights_linear(m, b))
 }
-
-
 
 #[pymodule]
 fn better_tensorflow(m: &Bound<'_, PyModule>) -> PyResult<()> {

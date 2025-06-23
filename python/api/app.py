@@ -45,6 +45,7 @@ async def predict_rbf(file: UploadFile):
 @app.post("/train_rbf")
 async def training_rbf(
     gamma: float,
+    number_clusters: int,
     filter_cat: List[str],
 ):
     dataset, dataset_test = DataManager.load_dataset(DATASET_PATH, filter_cat)
@@ -55,6 +56,7 @@ async def training_rbf(
         dataset,
         dataset_test,
         [],
+        number_clusters,
         gamma,
         True,
         True,

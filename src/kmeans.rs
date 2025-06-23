@@ -1,26 +1,16 @@
 use crate::math;
+use crate::matrix;
 use rand::Rng;
 
-fn flatten_dataset(dataset: Vec<Vec<Vec<f32>>>) -> Vec<(Vec<f32>, usize)> {
-    let mut flattened_data = Vec::new();
 
-    for (class_idx, class_data) in dataset.iter().enumerate() {
-        for data_point in class_data {
-            flattened_data.push((data_point.clone(), class_idx));
-        }
-    }
 
-    flattened_data
-}
-
-pub fn kmeans(dataset: Vec<Vec<Vec<f32>>>, num_centers: usize, max_iter: usize) -> Vec<Vec<f32>> {
-    let mut rng = rand::thread_rng();
-    let flattened_data = flatten_dataset(dataset);
+pub fn kmeans(dataset: Vec<Vec<Vec<f32>>>, number_clusters: usize, max_iter: usize) -> Vec<Vec<f32>> {
+    let flattened_data = matrix::matrix_dataset_to_array(dataset);
     let mut centers = Vec::new();
     let mut labels = vec![0; flattened_data.len()];
 
-    for _ in 0..num_centers {
-        let random_index = rng.gen_range(0..flattened_data.len());
+    for _ in 0..number_clusters {
+        let random_index = rand::thread_rng().gen_range(0..flattened_data.len());
         centers.push(flattened_data[random_index].0.clone());
     }
 
@@ -48,8 +38,11 @@ pub fn kmeans(dataset: Vec<Vec<Vec<f32>>>, num_centers: usize, max_iter: usize) 
             }
         }
 
-        let mut new_centers = vec![vec![0.0; flattened_data[0].0.len()]; num_centers];
-        let mut count = vec![0; num_centers];
+        let mut new_centers = vec![];
+        for _ in 0..number_clusters {
+            new_centers.push(vec![0.0; flattened_data[0].0.len()]);
+        }
+        let mut count = vec![0; number_clusters];
 
         for (i, (data_point, label)) in flattened_data.iter().enumerate() {
             for j in 0..data_point.len() {
@@ -58,7 +51,7 @@ pub fn kmeans(dataset: Vec<Vec<Vec<f32>>>, num_centers: usize, max_iter: usize) 
             count[*label] += 1;
         }
 
-        for i in 0..num_centers {
+        for i in 0..number_clusters {
             if count[i] > 0 {
                 for j in 0..new_centers[i].len() {
                     new_centers[i][j] /= count[i] as f32;

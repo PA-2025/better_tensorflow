@@ -96,3 +96,16 @@ pub fn regularized_pseudo_inverse(phi: &Vec<Vec<f32>>, lambda: f32) -> Vec<Vec<f
     let inv = inverse(&regularized);
     multiply_matrices(&inv, &phi_t)
 }
+
+
+pub fn matrix_dataset_to_array(dataset: Vec<Vec<Vec<f32>>>) -> Vec<(Vec<f32>, usize)> {
+    let mut flattened_data = Vec::new();
+
+    for (class_idx, class_data) in dataset.iter().enumerate() {
+        for data_point in class_data {
+            flattened_data.push((data_point.clone(), class_idx));
+        }
+    }
+
+    flattened_data
+}
