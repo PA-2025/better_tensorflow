@@ -23,16 +23,29 @@ app.add_middleware(
 DATASET_PATH = "python/api/data/music_spec/"
 
 
-@app.post("/predict_rbf")
-async def predict_rbf(file: UploadFile):
+@app.post("/predict_all")
+async def predict_all(file: UploadFile, weight_file: UploadFile):
     with open("temp.mp3", "wb") as f:
         f.write(await file.read())
 
+    with open("weight_temp", "wb") as f:
+        f.write(await weight_file.read())
+
     data = DataManager.load_data("temp.mp3")
+
+    algo = DataManager.find_weight_category("weight_temp")
+    DataManager.convert_file_good_weight("weight_temp", algo)
+
     results = []
     for d in data:
-        array = btf.convert_matrix_to_array(d.tolist())
-        prediction = btf.predict_rbf(array, True, True)
+        match algo:
+            case "rbf":
+                array = btf.convert_matrix_to_array(d.tolist())
+                prediction = btf.predict_rbf(array, True, True)
+            case "mlp":
+                array = btf.convert_matrix_to_array(d.tolist())
+                prediction = btf.predict_mlp(array, [], True, True)
+
         results.append(prediction)
 
     f = open("dataset.txt", "r")
@@ -45,6 +58,7 @@ async def predict_rbf(file: UploadFile):
 @app.post("/train_rbf")
 async def training_rbf(
     gamma: float,
+    number_clusters: int,
     filter_cat: List[str],
 ):
     dataset, dataset_test = DataManager.load_dataset(DATASET_PATH, filter_cat)
@@ -55,6 +69,7 @@ async def training_rbf(
         dataset,
         dataset_test,
         [],
+        number_clusters,
         gamma,
         True,
         True,

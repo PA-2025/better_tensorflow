@@ -15,7 +15,7 @@ import cv2
 import random
 import pymongo
 
-from python.api.data_pre_process import DataPreProcess
+from data_pre_process import DataPreProcess
 
 DURATION_MAX = 10
 
@@ -153,3 +153,33 @@ class DataManager:
                 categories.append(folder)
 
         return categories
+
+    @staticmethod
+    def find_weight_category(weight_path: str) -> str:
+        file = open(weight_path, "r")
+        first_line = file.readline()
+        file.close()
+        if "[[[" in first_line:
+            return "mlp"
+        if "[[" in first_line:
+            return "rbf"
+        if "bias" in first_line:
+            return "svm"
+        if "[" in first_line:
+            return "linear"
+        else:
+            raise ValueError("Error for file: " + weight_path)
+
+    @staticmethod
+    def convert_file_good_weight(weight_path: str, algo: str):
+        match algo:
+            case "mlp":
+                os.rename(weight_path, "w_mlp.weight")
+            case "rbf":
+                os.rename(weight_path, "w_rbf.weight")
+            case "svm":
+                os.rename(weight_path, "w_svm.weight")
+            case "linear":
+                os.rename(weight_path, "w_linear.weight")
+            case _:
+                raise ValueError("Error for algo: " + algo)
