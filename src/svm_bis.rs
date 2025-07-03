@@ -69,7 +69,7 @@ impl KernelSVM {
     }
 
     /// Entraînement du modèle
-    pub fn fit(&mut self, x: Vec<Vec<f64>>, y: Vec<i32>) {
+    pub fn fit(&mut self, x: Vec<Vec<f64>>, y: Vec<i32>, training_name: &str) {
         let x = Array2::from_shape_vec((x.len(), x[0].len()), x.into_iter().flatten().collect()).unwrap();
         let y = Array1::from_iter(y.into_iter().map(|v| v as f64));
         let n = x.nrows();
@@ -104,7 +104,7 @@ impl KernelSVM {
                 }
             }
         }
-        export_weights_svm(&self.alpha, self.bias, &self.support_vectors, &self.support_labels);
+        export_weights_svm(&self.alpha, self.bias, &self.support_vectors, &self.support_labels, training_name.to_string());
 
     }
 
