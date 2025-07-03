@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 from fastapi import FastAPI, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -38,6 +40,7 @@ async def predict_all(file: UploadFile, weight_file: UploadFile):
 
     results = []
     for d in data:
+        prediction = 0
         match algo:
             case "rbf":
                 array = btf.convert_matrix_to_array(d.tolist())
@@ -45,6 +48,15 @@ async def predict_all(file: UploadFile, weight_file: UploadFile):
             case "mlp":
                 array = btf.convert_matrix_to_array(d.tolist())
                 prediction = btf.predict_mlp(array, [], True, True)
+            case "svm":
+                array = btf.convert_matrix_to_array(d.tolist())
+                svm=btf.kernelSVM("rbf", 2.0, lr=0.1, lambda_svm=0.01, epochs=200)
+                files=os.listdir("svm_*.weight")
+                for file in files:
+                    os.rename(file,"wsvm.weight")
+                    prediction = svm.predict(array)
+                    if prediction == 1:
+                        break
 
         results.append(prediction)
 
@@ -125,6 +137,39 @@ async def training_mlp(
         learning_rate=learning_rate,
         nb_epoch_to_save=nb_epoch_to_save,
     )
+
+    return {"training": "OK"}
+
+@app.post("/train_svm")
+async def training_svm(
+        nb_epochs: int,
+        learning_rate: float,
+        filter_cat: List[str],
+        lambda_svm : float,
+        kernel: str,
+        bias: float ,
+        nb_epoch_to_save: int = 10000,
+
+):
+    dataset, dataset_test = DataManager.load_dataset(DATASET_PATH, filter_cat)
+    datasets_y = []
+    for k in range(len(dataset)):
+        dataset_y = []
+        for i in range(len(dataset)):
+                for j in range(len(dataset[i])):
+                    if i == k:
+                        dataset_y.append(0)
+                    else:
+                        dataset_y.append(1)
+        datasets_y.append(dataset_y)
+
+    now = datetime.now()
+
+    os.remove('svm_*.weight')
+
+    svm = btf.KernelSVM(kernel, bias, lr=learning_rate, lambda_svm=lambda_svm, epochs=nb_epochs)
+    for i in range(len(datasets_y) - 1 if len(datasets_y)<=2 else 0):
+        svm.fit(dataset,datasets_y[i],f"svm_{i}")
 
     return {"training": "OK"}
 
