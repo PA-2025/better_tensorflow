@@ -104,6 +104,7 @@ dependencies = [
  "pyo3",
  "rand 0.9.1",
  "rusqlite",
+ "serde_json",
  "tokio",
 ]
 

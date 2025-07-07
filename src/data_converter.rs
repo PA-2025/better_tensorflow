@@ -243,3 +243,23 @@ pub fn import_weights_svm() -> (Vec<f64>, f64, Vec<Array1<f64>>, Vec<f64>) {
 
     (alpha, bias, support_vectors, support_labels)
 }
+
+pub fn export_weights_ols(weights: &Vec<f32>) {
+    let mut result_str = String::from("[");
+    for w in weights {
+        result_str.push_str(&w.to_string());
+        result_str.push(',');
+    }
+    result_str.push(']');
+    data_manager::import_text_to_file("weights_ols.weights", result_str)
+        .expect("Error during save weights");
+}
+
+pub fn import_weights_ols() -> Vec<f32> {
+    let content = data_manager::load_text_to_file("weights_ols.weights");
+    let trimmed = content.trim_matches(|c| c == '[' || c == ']');
+    trimmed
+        .split(',')
+        .filter_map(|s| s.trim().parse::<f32>().ok())
+        .collect()
+}
