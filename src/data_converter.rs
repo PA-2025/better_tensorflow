@@ -245,14 +245,21 @@ pub fn import_weights_svm() -> (Vec<f64>, f64, Vec<Array1<f64>>, Vec<f64>) {
 }
 
 pub fn export_weights_ols(weights: &Vec<f32>) {
-    std::fs::write(
-        "weights_ols.json",
-        serde_json::to_string(weights).unwrap(),
-    )
-        .expect("Unable to save weights");
+    let mut result_str = String::from("[");
+    for w in weights {
+        result_str.push_str(&w.to_string());
+        result_str.push(',');
+    }
+    result_str.push(']');
+    data_manager::import_text_to_file("weights_ols.weights", result_str)
+        .expect("Error during save weights");
 }
 
 pub fn import_weights_ols() -> Vec<f32> {
-    let content = std::fs::read_to_string("weights_ols.json").expect("Unable to read weights");
-    serde_json::from_str(&content).unwrap()
+    let content = data_manager::load_text_to_file("weights_ols.weights");
+    let trimmed = content.trim_matches(|c| c == '[' || c == ']');
+    trimmed
+        .split(',')
+        .filter_map(|s| s.trim().parse::<f32>().ok())
+        .collect()
 }
