@@ -8,7 +8,7 @@ from tempfile import mktemp
 import os
 from tqdm import tqdm
 
-DURATION_MAX = 10
+DURATION_MAX = 30
 
 
 def split_audio(audio: AudioSegment, duration_max=DURATION_MAX) -> List[AudioSegment]:

@@ -15,7 +15,7 @@ import cv2
 import random
 import pymongo
 
-from data_pre_process import DataPreProcess
+from python.api.data_pre_process import DataPreProcess
 
 DURATION_MAX = 10
 
