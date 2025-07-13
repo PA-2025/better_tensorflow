@@ -1,4 +1,3 @@
-import numpy as np
 from fastapi import FastAPI, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List
@@ -52,7 +51,7 @@ async def predict_all(file: UploadFile, weight_file: UploadFile):
     cat = json.loads(f.read())
     f.close()
 
-    return {"prediction": cat[np.argmax(results)]}
+    return {"prediction": cat[int(max(set(results), key=results.count))]}
 
 
 @app.post("/train_rbf")
@@ -97,7 +96,7 @@ async def predict_mlp(file: UploadFile):
 
     print(results)
 
-    return {"prediction": cat[np.argmax(results)]}
+    return {"prediction": cat[int(max(set(results), key=results.count))]}
 
 
 @app.post("/train_mlp")
