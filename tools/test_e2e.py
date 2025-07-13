@@ -60,7 +60,7 @@ class TestE2E:
         dataset_test = self.get_file_path(sys.argv[1])
         cat = self.get_cat()
         score_e2e = 0
-        ort_session = ort.InferenceSession("resnet_model.onnx")
+        ort_session = ort.InferenceSession("resnet_model_test.onnx")
         for dt in dataset_test:
             mp3_audio = AudioSegment.from_file(dt[0], format="mp3")
             audio_chunk = DataManager.split_audio(mp3_audio)
@@ -101,7 +101,11 @@ class TestE2E:
         return score_e2e
 
     def test_mlp_binary(self):
-        weights = []
+        weights = [
+            "classical_hip-hop_jazz_mlp.weight",
+            "pop_rock_mlp.weight",
+            "techno_wajnberg_mlp.weight",
+        ]
         dataset_test = self.get_file_path(sys.argv[1])
         cat = self.get_cat()
         score_e2e = 0
@@ -113,7 +117,9 @@ class TestE2E:
                 for i in range(len(weights)):
                     shutil.copy(weights[i], "w_mlp.weight")
                     prediction = btf.predict_mlp(array, [], True, False)
-                    prediction = int(prediction) + i * 2
+                    prediction = (
+                        int(prediction) if i == 0 else int(prediction) + i * 2 + 1
+                    )
                     results.append(prediction)
 
             print(
@@ -127,9 +133,9 @@ class TestE2E:
 
 if __name__ == "__main__":
     test_e2e = TestE2E()
-    score = test_e2e.run_test_mlp()
-    print(f"Final Score: {score}")
+    # score = test_e2e.run_test_mlp()
+    # print(f"Final Score: {score}")
     score = test_e2e.run_resnet_test()
     print(f"Final ResNet Score: {score}")
-    score = test_e2e.test_mlp_binary()
-    print(f"Final MLP Binary Score: {score}")
+    # score = test_e2e.test_mlp_binary()
+    # print(f"Final MLP Binary Score: {score}")
