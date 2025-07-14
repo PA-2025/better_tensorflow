@@ -1,4 +1,5 @@
-import numpy as np
+import shutil
+
 from fastapi import FastAPI, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List
@@ -52,7 +53,7 @@ async def predict_all(file: UploadFile, weight_file: UploadFile):
     cat = json.loads(f.read())
     f.close()
 
-    return {"prediction": cat[np.argmax(results)]}
+    return {"prediction": cat[int(max(set(results), key=results.count))]}
 
 
 @app.post("/train_rbf")
@@ -86,10 +87,18 @@ async def predict_mlp(file: UploadFile):
 
     data = DataManager.load_data("temp.mp3")
     results = []
+    weights = [
+        "classical_hip-hop_jazz_mlp.weight",
+        "pop_rock_mlp.weight",
+        "techno_wajnberg_mlp.weight",
+    ]
     for d in data:
         array = btf.convert_matrix_to_array(d.tolist())
-        prediction = btf.predict_mlp(array, [], True, True)
-        results.append(prediction)
+        for i in range(len(weights)):
+            shutil.copy(weights[i], "w_mlp.weight")
+            prediction = btf.predict_mlp(array, [], True, False)
+            prediction = int(prediction) if i == 0 else int(prediction) + i * 2 + 1
+            results.append(prediction)
 
     f = open("dataset.txt", "r")
     cat = json.loads(f.read())
@@ -97,7 +106,7 @@ async def predict_mlp(file: UploadFile):
 
     print(results)
 
-    return {"prediction": cat[np.argmax(results)]}
+    return {"prediction": cat[int(max(set(results), key=results.count))]}
 
 
 @app.post("/train_mlp")
