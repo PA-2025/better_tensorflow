@@ -133,6 +133,10 @@ fn predict_ols(x_data: Vec<Vec<f32>>, weights: Vec<f32>) -> PyResult<Vec<f32>> {
     Ok(ols::predict_ols(x_data, weights))
 }
 
+#[pyfunction]
+fn train_ols_robust(x_data: Vec<Vec<f32>>, y_data: Vec<f32>) -> PyResult<Vec<f32>> {
+    ols::train_ols_robust(x_data, y_data)
+}
 
 
 #[pymodule]
@@ -151,6 +155,7 @@ fn better_tensorflow(m: &Bound<'_, PyModule>) -> PyResult<()> {
 
     m.add_function(wrap_pyfunction!(train_ols, m)?)?;
     m.add_function(wrap_pyfunction!(predict_ols, m)?)?;
+    m.add_function(wrap_pyfunction!(train_ols_robust, m)?)?;
 
 
     Ok(())
