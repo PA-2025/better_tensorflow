@@ -10,6 +10,7 @@ from data_manager import DataManager
 from datetime import datetime
 from database_manager import DatabaseManager
 
+
 app = FastAPI()
 
 origins = ["*"]
@@ -50,28 +51,28 @@ async def predict_all(file: UploadFile, weight_file: UploadFile):
                 prediction = btf.predict_mlp(array, [], True, True)
             case "svm":
                 array = btf.convert_matrix_to_array(d.tolist())
-                svm=btf.kernelSVM("rbf", 2.0, lr=0.1, lambda_svm=0.01, epochs=200)
-                files=os.listdir("svm_*.weight")
+                scores = []
+                files = sorted([f for f in os.listdir() if f.startswith("svm_") and f.endswith(".weights")])
                 for file in files:
-                    os.rename(file,"wsvm.weight")
-                    prediction = svm.predict(array)
-                    if prediction == 1:
-                        break
+                    svm = btf.KernelSVM("rbf", 2.0, lr=0.1, lambda_svm=0.01, epochs=200)
+                    svm.load_weights_from(file)
+                    pred = svm.predict([array])[0]
+                    scores.append(pred)
+                prediction = int(np.argmax(scores))
 
         results.append(prediction)
 
-    f = open("dataset.txt", "r")
-    cat = json.loads(f.read())
-    f.close()
+    with open("dataset.txt", "r") as f:
+        cat = json.load(f)
 
     return {"prediction": cat[np.argmax(results)]}
 
 
 @app.post("/train_rbf")
 async def training_rbf(
-    gamma: float,
-    number_clusters: int,
-    filter_cat: List[str],
+        gamma: float,
+        number_clusters: int,
+        filter_cat: List[str],
 ):
     dataset, dataset_test = DataManager.load_dataset(DATASET_PATH, filter_cat)
 
@@ -103,9 +104,8 @@ async def predict_mlp(file: UploadFile):
         prediction = btf.predict_mlp(array, [], True, True)
         results.append(prediction)
 
-    f = open("dataset.txt", "r")
-    cat = json.loads(f.read())
-    f.close()
+    with open("dataset.txt", "r") as f:
+        cat = json.load(f)
 
     print(results)
 
@@ -114,11 +114,11 @@ async def predict_mlp(file: UploadFile):
 
 @app.post("/train_mlp")
 async def training_mlp(
-    nb_epochs: int,
-    hidden_layers: List[int],
-    learning_rate: float,
-    filter_cat: List[str],
-    nb_epoch_to_save: int = 10000,
+        nb_epochs: int,
+        hidden_layers: List[int],
+        learning_rate: float,
+        filter_cat: List[str],
+        nb_epoch_to_save: int = 10000,
 ):
     dataset, dataset_test = DataManager.load_dataset(DATASET_PATH, filter_cat)
 
@@ -140,15 +140,15 @@ async def training_mlp(
 
     return {"training": "OK"}
 
+
 @app.post("/train_svm")
 async def training_svm(
         nb_epochs: int,
+        param:float,
         learning_rate: float,
         filter_cat: List[str],
-        lambda_svm : float,
+        lambda_svm: float,
         kernel: str,
-        bias: float ,
-        nb_epoch_to_save: int = 10000,
 
 ):
     dataset, dataset_test = DataManager.load_dataset(DATASET_PATH, filter_cat)
@@ -156,20 +156,22 @@ async def training_svm(
     for k in range(len(dataset)):
         dataset_y = []
         for i in range(len(dataset)):
-                for j in range(len(dataset[i])):
-                    if i == k:
-                        dataset_y.append(0)
-                    else:
-                        dataset_y.append(1)
+            for j in range(len(dataset[i])):
+                if i == k:
+                    dataset_y.append(1)
+                else:
+                    dataset_y.append(-1)
         datasets_y.append(dataset_y)
 
     now = datetime.now()
 
-    os.remove('svm_*.weight')
+    for file in os.listdir():
+        if file.startswith("svm_") and file.endswith(".weights"):
+            os.remove(file)
 
-    svm = btf.KernelSVM(kernel, bias, lr=learning_rate, lambda_svm=lambda_svm, epochs=nb_epochs)
-    for i in range(len(datasets_y) - 1 if len(datasets_y)<=2 else 0):
-        svm.fit(dataset,datasets_y[i],f"svm_{i}")
+    for i in range(len(datasets_y)):
+        svm = btf.KernelSVM(kernel, param, lr=learning_rate, lambda_svm=lambda_svm, epochs=nb_epochs)
+        svm.fit(dataset, datasets_y[i], f"svm_{i}.weights")
 
     return {"training": "OK"}
 
@@ -185,7 +187,7 @@ def get_results():
 def get_results_data():
     return {
         "results": DatabaseManager.get_training_data()
-        + DatabaseManager.get_training_data_mongo()
+                   + DatabaseManager.get_training_data_mongo()
     }
 
 
