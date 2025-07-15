@@ -1,5 +1,6 @@
 from collections import defaultdict
 
+
 # -------- MAP --------
 def map_function(data):
     mapped = []
@@ -25,13 +26,7 @@ def reduce_function(grouped_data):
 
 
 # -------- EXECUTION --------
-data = [
-    ("Math", 12),
-    ("Math", 15),
-    ("Info", 18),
-    ("Info", 14),
-    ("Physique", 16)
-]
+data = [("Math", 12), ("Math", 15), ("Info", 18), ("Info", 14), ("Physique", 16)]
 
 mapped = map_function(data)
 print("mapped:", mapped)

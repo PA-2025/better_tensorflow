@@ -52,7 +52,13 @@ async def predict_all(file: UploadFile, weight_file: UploadFile):
             case "svm":
                 array = btf.convert_matrix_to_array(d.tolist())
                 scores = []
-                files = sorted([f for f in os.listdir() if f.startswith("svm_") and f.endswith(".weights")])
+                files = sorted(
+                    [
+                        f
+                        for f in os.listdir()
+                        if f.startswith("svm_") and f.endswith(".weights")
+                    ]
+                )
                 for file in files:
                     svm = btf.KernelSVM("rbf", 2.0, lr=0.1, lambda_svm=0.01, epochs=200)
                     svm.load_weights_from(file)
@@ -70,9 +76,9 @@ async def predict_all(file: UploadFile, weight_file: UploadFile):
 
 @app.post("/train_rbf")
 async def training_rbf(
-        gamma: float,
-        number_clusters: int,
-        filter_cat: List[str],
+    gamma: float,
+    number_clusters: int,
+    filter_cat: List[str],
 ):
     dataset, dataset_test = DataManager.load_dataset(DATASET_PATH, filter_cat)
 
@@ -114,11 +120,11 @@ async def predict_mlp(file: UploadFile):
 
 @app.post("/train_mlp")
 async def training_mlp(
-        nb_epochs: int,
-        hidden_layers: List[int],
-        learning_rate: float,
-        filter_cat: List[str],
-        nb_epoch_to_save: int = 10000,
+    nb_epochs: int,
+    hidden_layers: List[int],
+    learning_rate: float,
+    filter_cat: List[str],
+    nb_epoch_to_save: int = 10000,
 ):
     dataset, dataset_test = DataManager.load_dataset(DATASET_PATH, filter_cat)
 
@@ -143,15 +149,18 @@ async def training_mlp(
 
 @app.post("/train_svm")
 async def training_svm(
-        nb_epochs: int,
-        param:float,
-        learning_rate: float,
-        filter_cat: List[str],
-        lambda_svm: float,
-        kernel: str,
-
+    nb_epochs: int,
+    param: float,
+    learning_rate: float,
+    filter_cat: List[str],
+    lambda_svm: float,
+    kernel: str,
 ):
+    import numpy as np
+
     dataset, dataset_test = DataManager.load_dataset(DATASET_PATH, filter_cat)
+
+    # Création des labels One-vs-All
     datasets_y = []
     for k in range(len(dataset)):
         dataset_y = []
@@ -165,14 +174,36 @@ async def training_svm(
 
     now = datetime.now()
 
+    # Supprime les anciens fichiers de poids SVM
     for file in os.listdir():
         if file.startswith("svm_") and file.endswith(".weights"):
             os.remove(file)
 
-    for i in range(len(datasets_y)):
-        svm = btf.KernelSVM(kernel, param, lr=learning_rate, lambda_svm=lambda_svm, epochs=nb_epochs)
-        svm.fit(dataset, datasets_y[i], f"svm_{i}.weights")
+    # Prépare les données de validation
+    x_val = [item for sublist in dataset_test for item in sublist]
+    y_val = [i for i, sublist in enumerate(dataset_test) for _ in sublist]
 
+    # Entraînement One-vs-All
+    for i in range(len(datasets_y)):
+        x_data = np.array(
+            [item for sublist in dataset for item in sublist], dtype=np.float64
+        )
+    y_data = np.array(datasets_y[i], dtype=np.float64)
+
+    svm = btf.KernelSVM(
+        kernel, param, lr=learning_rate, lambda_svm=lambda_svm, epochs=nb_epochs
+    )
+
+    # Appliquer +1 / -1 aussi sur les labels de validation
+    y_val_bin = [1 if label == i else -1 for label in y_val]
+
+    svm.fit(
+        x_data.tolist(),
+        y_data.astype(int).tolist(),
+        f"svm_{i}.weights",
+        x_val,
+        y_val_bin,  # Labels de validation pour la validation croisée
+    )
     return {"training": "OK"}
 
 
@@ -187,7 +218,7 @@ def get_results():
 def get_results_data():
     return {
         "results": DatabaseManager.get_training_data()
-                   + DatabaseManager.get_training_data_mongo()
+        + DatabaseManager.get_training_data_mongo()
     }
 
 
