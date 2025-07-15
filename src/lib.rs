@@ -12,6 +12,7 @@ mod matrix;
 mod mlp;
 mod rbf;
 mod svm_bis;
+mod ols;
 
 #[pyfunction]
 fn train_linear(
@@ -121,6 +122,23 @@ fn export_linear_weights(m: f32, b: f32) -> PyResult<()> {
     Ok(data_converter::export_weights_linear(m, b))
 }
 
+
+#[pyfunction]
+fn train_ols(x_data: Vec<Vec<f32>>, y_data: Vec<f32>) -> PyResult<Vec<f32>> {
+    Ok(ols::train_ols(x_data, y_data))
+}
+
+#[pyfunction]
+fn predict_ols(x_data: Vec<Vec<f32>>, weights: Vec<f32>) -> PyResult<Vec<f32>> {
+    Ok(ols::predict_ols(x_data, weights))
+}
+
+#[pyfunction]
+fn train_ols_robust(x_data: Vec<Vec<f32>>, y_data: Vec<f32>) -> PyResult<Vec<f32>> {
+    ols::train_ols_robust(x_data, y_data)
+}
+
+
 #[pymodule]
 fn better_tensorflow(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(predict_mlp, m)?)?;
@@ -134,5 +152,11 @@ fn better_tensorflow(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(train_rbf, m)?)?;
     m.add_function(wrap_pyfunction!(predict_rbf, m)?)?;
     m.add_class::<svm_bis::KernelSVM>()?;
+
+    m.add_function(wrap_pyfunction!(train_ols, m)?)?;
+    m.add_function(wrap_pyfunction!(predict_ols, m)?)?;
+    m.add_function(wrap_pyfunction!(train_ols_robust, m)?)?;
+
+
     Ok(())
 }

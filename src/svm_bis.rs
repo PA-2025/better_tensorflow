@@ -107,6 +107,7 @@ impl KernelSVM {
             }
         }
 
+
         let (kernel_type, param) = match &self.kernel {
             Kernel::RBF(gamma) => ("rbf", *gamma),
             Kernel::Polynomial(degree) => ("poly", *degree as f64),
