@@ -53,8 +53,9 @@ pub fn load_weights_mlp() -> Vec<Vec<Vec<f32>>> {
     }
     result
 }
+
 pub fn export_weights_linear(m: f32, b: f32) {
-    let data = vec![vec![vec![m, b]]]; // Même format que pour le MLP : [[[m, b]]]
+    let data = vec![vec![vec![m, b]]];
     let mut result_str = String::from("[");
     for layer in &data {
         result_str.push('[');
@@ -95,7 +96,7 @@ pub fn import_weights_linear() -> (f32, f32) {
                 }
             }
             if values.len() == 2 {
-                return (values[0], values[1]); // Retourne m et b
+                return (values[0], values[1]);
             }
         }
     }
@@ -191,10 +192,27 @@ pub fn load_weights_rbf() -> (Vec<Vec<f32>>, Vec<f32>) {
     (centers, w)
 }
 
-pub fn export_weights_svm(alpha: &Vec<f64>, bias: f64, support_vectors: &Vec<Array1<f64>>, support_labels: &Vec<f64>,training_name:String) {
+pub fn export_weights_svm(
+    alpha: &Vec<f64>,
+    bias: f64,
+    support_vectors: &Vec<Array1<f64>>,
+    support_labels: &Vec<f64>,
+    path: &str,
+    kernel_type: &str,
+    param: f64,
+    lr: f64,
+    lambda: f64,
+    epochs: usize,
+) {
     let mut result_str = String::new();
 
+    result_str.push_str(&format!("kernel:{}\n", kernel_type));
+    result_str.push_str(&format!("param:{}\n", param));
+    result_str.push_str(&format!("lr:{}\n", lr));
+    result_str.push_str(&format!("lambda:{}\n", lambda));
+    result_str.push_str(&format!("epochs:{}\n", epochs));
     result_str.push_str(&format!("bias:{}\n", bias));
+
     result_str.push_str("alpha:[");
     result_str.push_str(&alpha.iter().map(|v| v.to_string()).collect::<Vec<_>>().join(","));
     result_str.push_str("]\n");
@@ -211,13 +229,12 @@ pub fn export_weights_svm(alpha: &Vec<f64>, bias: f64, support_vectors: &Vec<Arr
     result_str.push_str(&support_labels.iter().map(|v| v.to_string()).collect::<Vec<_>>().join(","));
     result_str.push_str("]\n");
 
-    data_manager::import_text_to_file(&*(training_name + ".weight"), result_str)
-
+    data_manager::import_text_to_file(path, result_str)
         .expect("Error during save weights");
-
 }
-pub fn import_weights_svm() -> (Vec<f64>, f64, Vec<Array1<f64>>, Vec<f64>) {
-    let content = data_manager::load_text_to_file("wsvm.weight");
+
+pub fn import_weights_svm(path: &str) -> (Vec<f64>, f64, Vec<Array1<f64>>, Vec<f64>) {
+    let content = data_manager::load_text_to_file(path);
 
     let bias_line = content.lines().find(|l| l.starts_with("bias:")).expect("Missing bias");
     let bias: f64 = bias_line["bias:".len()..].parse().expect("Invalid bias");
