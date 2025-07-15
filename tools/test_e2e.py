@@ -130,12 +130,54 @@ class TestE2E:
         print(f"Test MLP: {score_e2e}/{len(dataset_test)} correct predictions.")
         return score_e2e
 
+    def test_svm(self):
+        dataset_test = self.get_file_path(sys.argv[1])
+        svm = btf.KernelSVM("rbf", 2.0, lr=0.1, lambda_svm=0.01, epochs=200)
+        cat = self.get_cat()
+        score_e2e = 0
+        for dt in dataset_test:
+            data = DataManager.load_data(dt[0])
+            results = []
+            for d in data:
+                array = btf.convert_matrix_to_array(d.tolist())
+
+                scores = []
+                files = sorted(
+                    [
+                        f
+                        for f in os.listdir()
+                        if f.startswith("svm_") and f.endswith(".weights")
+                    ]
+                )
+                for file in files:
+                    svm.load_weights_from(file)
+                    pred = svm.predict([array])[0]
+                    scores.append(pred)
+                print(scores)
+                prediction = 0
+                for i in range(len(scores)):
+                    if scores[i] == 1:
+                        prediction = i
+                        break
+
+                results.append(prediction)
+
+            print(
+                f"Prediction for {dt[0]}: {results} -> {max(set(results), key=results.count)}"
+            )
+            if cat[int(max(set(results), key=results.count))] == dt[1]:
+                score_e2e += 1
+        print(f"Test MLP: {score_e2e}/{len(dataset_test)} correct predictions.")
+        return score_e2e
+
 
 if __name__ == "__main__":
     test_e2e = TestE2E()
     # score = test_e2e.run_test_mlp()
     # print(f"Final Score: {score}")
-    score = test_e2e.run_resnet_test()
-    print(f"Final ResNet Score: {score}")
+    # score = test_e2e.run_resnet_test()
+    # print(f"Final ResNet Score: {score}")
     # score = test_e2e.test_mlp_binary()
     # print(f"Final MLP Binary Score: {score}")
+    score = test_e2e.test_svm()
+    print(f"Final SVM Score: {score}")
