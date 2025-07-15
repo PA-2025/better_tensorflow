@@ -1,5 +1,6 @@
+import os
+import numpy as np
 import shutil
-
 from fastapi import FastAPI, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List
@@ -8,6 +9,7 @@ import json
 from data_manager import DataManager
 from datetime import datetime
 from database_manager import DatabaseManager
+
 
 app = FastAPI()
 
@@ -39,6 +41,7 @@ async def predict_all(file: UploadFile, weight_file: UploadFile):
 
     results = []
     for d in data:
+        prediction = 0
         match algo:
             case "rbf":
                 array = btf.convert_matrix_to_array(d.tolist())
@@ -46,12 +49,27 @@ async def predict_all(file: UploadFile, weight_file: UploadFile):
             case "mlp":
                 array = btf.convert_matrix_to_array(d.tolist())
                 prediction = btf.predict_mlp(array, [], True, True)
+            case "svm":
+                array = btf.convert_matrix_to_array(d.tolist())
+                scores = []
+                files = sorted(
+                    [
+                        f
+                        for f in os.listdir()
+                        if f.startswith("svm_") and f.endswith(".weights")
+                    ]
+                )
+                for file in files:
+                    svm = btf.KernelSVM("rbf", 2.0, lr=0.1, lambda_svm=0.01, epochs=200)
+                    svm.load_weights_from(file)
+                    pred = svm.predict([array])[0]
+                    scores.append(pred)
+                prediction = int(np.argmax(scores))
 
         results.append(prediction)
 
-    f = open("dataset.txt", "r")
-    cat = json.loads(f.read())
-    f.close()
+    with open("dataset.txt", "r") as f:
+        cat = json.load(f)
 
     return {"prediction": cat[int(max(set(results), key=results.count))]}
 
@@ -100,9 +118,8 @@ async def predict_mlp(file: UploadFile):
             prediction = int(prediction) if i == 0 else int(prediction) + i * 2 + 1
             results.append(prediction)
 
-    f = open("dataset.txt", "r")
-    cat = json.loads(f.read())
-    f.close()
+    with open("dataset.txt", "r") as f:
+        cat = json.load(f)
 
     print(results)
 
@@ -135,6 +152,66 @@ async def training_mlp(
         nb_epoch_to_save=nb_epoch_to_save,
     )
 
+    return {"training": "OK"}
+
+
+@app.post("/train_svm")
+async def training_svm(
+    nb_epochs: int,
+    param: float,
+    learning_rate: float,
+    filter_cat: List[str],
+    lambda_svm: float,
+    kernel: str,
+):
+    import numpy as np
+
+    dataset, dataset_test = DataManager.load_dataset(DATASET_PATH, filter_cat)
+
+    # Création des labels One-vs-All
+    datasets_y = []
+    for k in range(len(dataset)):
+        dataset_y = []
+        for i in range(len(dataset)):
+            for j in range(len(dataset[i])):
+                if i == k:
+                    dataset_y.append(1)
+                else:
+                    dataset_y.append(-1)
+        datasets_y.append(dataset_y)
+
+    now = datetime.now()
+
+    # Supprime les anciens fichiers de poids SVM
+    for file in os.listdir():
+        if file.startswith("svm_") and file.endswith(".weights"):
+            os.remove(file)
+
+    # Prépare les données de validation
+    x_val = [item for sublist in dataset_test for item in sublist]
+    y_val = [i for i, sublist in enumerate(dataset_test) for _ in sublist]
+
+    # Entraînement One-vs-All
+    for i in range(len(datasets_y)):
+        x_data = np.array(
+            [item for sublist in dataset for item in sublist], dtype=np.float64
+        )
+    y_data = np.array(datasets_y[i], dtype=np.float64)
+
+    svm = btf.KernelSVM(
+        kernel, param, lr=learning_rate, lambda_svm=lambda_svm, epochs=nb_epochs
+    )
+
+    # Appliquer +1 / -1 aussi sur les labels de validation
+    y_val_bin = [1 if label == i else -1 for label in y_val]
+
+    svm.fit(
+        x_data.tolist(),
+        y_data.astype(int).tolist(),
+        f"svm_{i}.weights",
+        x_val,
+        y_val_bin,  # Labels de validation pour la validation croisée
+    )
     return {"training": "OK"}
 
 
