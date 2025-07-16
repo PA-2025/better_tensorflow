@@ -179,7 +179,23 @@ class TestE2E:
             results = []
             for d in data:
                 array = btf.convert_matrix_to_array(d.tolist())
-                prediction = btf.predict_rbf(array, True, True)
+                scores = []
+                files = sorted(
+                    [
+                        f
+                        for f in os.listdir()
+                        if f.startswith("rbf") and f.endswith(".weights")
+                    ]
+                )
+                for file in files:
+                    os.rename(file, "w_rbf.weight")
+                    pred = btf.predict_rbf(array, True, True)
+                    scores.append(pred)
+                prediction = 0
+                for i in range(len(scores)):
+                    if scores[i] == 1:
+                        prediction = i
+                        break
                 results.append(prediction)
 
             print(
