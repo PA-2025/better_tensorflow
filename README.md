@@ -74,7 +74,7 @@ self.test_layers = [[4], [4, 4], [10], [4, 10]]
 2. Run the tests:
 
 ```bash
-export PYTHONPATH=$(pwd)/src
+export PYTHONPATH=$(pwd)/python/api
 python tools/test_better_model.py 4 10000
 ```
 

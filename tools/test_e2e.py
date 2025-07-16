@@ -8,7 +8,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from pydub import AudioSegment
 
-from python.api.data_manager import DataManager
+from data_manager import DataManager
 import better_tensorflow as btf
 from scipy.io import wavfile
 from tempfile import mktemp
@@ -132,7 +132,7 @@ class TestE2E:
 
     def test_svm(self):
         dataset_test = self.get_file_path(sys.argv[1])
-        svm = btf.KernelSVM("rbf", 2.0, lr=0.1, lambda_svm=0.01, epochs=200)
+        svm = btf.KernelSVM("poly", 2.0, lr=0.1, lambda_svm=0.01, epochs=200)
         cat = self.get_cat()
         score_e2e = 0
         for dt in dataset_test:
@@ -170,6 +170,26 @@ class TestE2E:
         print(f"Test MLP: {score_e2e}/{len(dataset_test)} correct predictions.")
         return score_e2e
 
+    def run_test_rbf(self) -> int:
+        dataset_test = self.get_file_path(sys.argv[1])
+        cat = self.get_cat()
+        score_e2e = 0
+        for dt in dataset_test:
+            data = DataManager.load_data(dt[0])
+            results = []
+            for d in data:
+                array = btf.convert_matrix_to_array(d.tolist())
+                prediction = btf.predict_rbf(array, True, True)
+                results.append(prediction)
+
+            print(
+                f"Prediction for {dt[0]}: {results} -> {max(set(results), key=results.count)}"
+            )
+            if cat[int(max(set(results), key=results.count))] == dt[1]:
+                score_e2e += 1
+        print(f"Test MLP: {score_e2e}/{len(dataset_test)} correct predictions.")
+        return score_e2e
+
 
 if __name__ == "__main__":
     test_e2e = TestE2E()
@@ -179,5 +199,7 @@ if __name__ == "__main__":
     # print(f"Final ResNet Score: {score}")
     # score = test_e2e.test_mlp_binary()
     # print(f"Final MLP Binary Score: {score}")
-    score = test_e2e.test_svm()
-    print(f"Final SVM Score: {score}")
+    # score = test_e2e.test_svm()
+    # print(f"Final SVM Score: {score}")
+    score = test_e2e.run_test_rbf()
+    print(f"Final RBF Score: {score}")

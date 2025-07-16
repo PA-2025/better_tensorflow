@@ -4,21 +4,17 @@ import sys
 import better_tensorflow as btf
 from datetime import datetime
 from tqdm import tqdm
-from python.api.data_manager import DataManager
+from data_manager import DataManager
 
 
 class Main:
     def __init__(self):
         self.results = pd.DataFrame(columns=["model", "image_size", "lr", "accuracy"])
         self.nb_test_to_save_results = int(sys.argv[1])
-        self.test_layers = [
-            [64, 32, 16, 8, 4],
-            [128, 64, 32, 16, 8],
-            [256, 128, 64, 32, 16],
-        ]
-        self.learning_rates = [0.01, 0.001]
+        self.test_layers = [[512, 256, 128, 64, 32, 16, 8], [512, 256, 128, 64]]
+        self.learning_rates = [0.0001]
         self.dataset, self.dataset_test = DataManager.load_dataset(
-            "python/api/data/music_spec/", filter_categories=["techno", "wajnberg"]
+            "python/api/data/music_spec/"
         )
 
     def run(self):
@@ -43,7 +39,7 @@ class Main:
                             False,
                             False,
                             learning_rate=lr,
-                            nb_epoch_to_save=int(sys.argv[2]),
+                            nb_epoch_to_save=int(int(sys.argv[2]) / 10),
                         )
                         result.append(r)
 
