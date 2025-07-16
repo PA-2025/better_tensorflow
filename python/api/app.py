@@ -44,7 +44,23 @@ async def predict_all(file: UploadFile, weight_file: UploadFile):
         match algo:
             case "rbf":
                 array = btf.convert_matrix_to_array(d.tolist())
-                prediction = btf.predict_rbf(array, True, True)
+                scores = []
+                files = sorted(
+                    [
+                        f
+                        for f in os.listdir()
+                        if f.startswith("rbf") and f.endswith(".weights")
+                    ]
+                )
+                for file in files:
+                    os.rename(file, "w_rbf.weight")
+                    pred = btf.predict_rbf(array, True, True)
+                    scores.append(pred)
+                prediction = 0
+                for i in range(len(scores)):
+                    if scores[i] == 1:
+                        prediction = i
+                        break
             case "mlp":
                 array = btf.convert_matrix_to_array(d.tolist())
                 prediction = btf.predict_mlp(array, [], True, True)
@@ -83,21 +99,43 @@ async def training_rbf(
     number_clusters: int,
     filter_cat: List[str],
 ):
+    for file in os.listdir():
+        if file.startswith("rbf_") and file.endswith(".weights"):
+            os.remove(file)
+
     dataset, dataset_test = DataManager.load_dataset(DATASET_PATH, filter_cat)
+    for i in range(len(dataset)):
+        dataset_split = [[], []]
+        dataset__split_test = [[], []]
+        for j in range(len(dataset)):
+            if j == i:
+                dataset_split[1].extend(dataset[j])
+            else:
+                dataset_split[0].extend(dataset[j])
 
-    now = datetime.now()
+        for j in range(len(dataset_test)):
+            if j == i:
+                dataset__split_test[1].extend(dataset_test[j])
+            else:
+                dataset__split_test[0].extend(dataset_test[j])
 
-    r = btf.train_rbf(
-        dataset,
-        dataset_test,
-        [],
-        number_clusters,
-        gamma,
-        True,
-        True,
-        f"train/mlp_{now.strftime('%Y-%m-%d_%H-%M-%S')}",
-    )
-    print(r)
+        now = datetime.now()
+        r = btf.train_rbf(
+            dataset_split,
+            dataset__split_test,
+            [],
+            number_clusters,
+            gamma,
+            True,
+            True,
+            f"train/mlp_{now.strftime('%Y-%m-%d_%H-%M-%S')}",
+        )
+        print(r)
+
+        os.rename(
+            "w_rbf.weight",
+            f"rbf_{i}.weights",
+        )
 
     return {"training": "OK"}
 
