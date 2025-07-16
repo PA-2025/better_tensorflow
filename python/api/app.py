@@ -87,7 +87,7 @@ async def training_rbf(
 
     now = datetime.now()
 
-    btf.train_rbf(
+    r = btf.train_rbf(
         dataset,
         dataset_test,
         [],
@@ -97,42 +97,9 @@ async def training_rbf(
         True,
         f"train/mlp_{now.strftime('%Y-%m-%d_%H-%M-%S')}",
     )
+    print(r)
 
     return {"training": "OK"}
-
-
-@app.post("/predict_svm")
-async def predict_svm(file: UploadFile):
-    with open("temp.mp3", "wb") as f:
-        f.write(await file.read())
-
-    data = DataManager.load_data("temp.mp3")
-    results = []
-    svm = btf.KernelSVM("rbf", 2.0, lr=0.1, lambda_svm=0.01, epochs=200)
-    for d in data:
-        array = btf.convert_matrix_to_array(d.tolist())
-        scores = []
-        files = sorted(
-            [f for f in os.listdir() if f.startswith("svm_") and f.endswith(".weights")]
-        )
-        for file in files:
-            svm.load_weights_from(file)
-            pred = svm.predict([array])[0]
-            scores.append(pred)
-
-        prediction = 0
-        for i in range(len(scores)):
-            if scores[i] == 1:
-                prediction = i
-                break
-        results.append(prediction)
-
-    with open("dataset.txt", "r") as f:
-        cat = json.load(f)
-
-    print(results)
-
-    return {"prediction": cat[int(max(set(results), key=results.count))]}
 
 
 @app.post("/predict_mlp")
