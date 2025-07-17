@@ -81,7 +81,7 @@ async def predict_all(file: UploadFile, weight_file: UploadFile):
                     ]
                 )
                 for file in files:
-                    svm = btf.KernelSVM("rbf", 2.0, lr=0.1, lambda_svm=0.01, epochs=200)
+                    svm = btf.KernelSVM("rbf", 2.0, lr=0.1, lambda_svm=0.01)
                     svm.load_weights_from(file)
                     pred = svm.predict([array])[0]
                     scores.append(pred)
@@ -205,7 +205,6 @@ async def training_mlp(
 
 @app.post("/train_svm")
 async def training_svm(
-    nb_epochs: int,
     param: float,
     learning_rate: float,
     filter_cat: List[str],
@@ -238,9 +237,7 @@ async def training_svm(
     y_val = [i for i, sublist in enumerate(dataset_test) for _ in sublist]
 
     # Entraînement One-vs-All
-    svm = btf.KernelSVM(
-        kernel, param, lr=learning_rate, lambda_svm=lambda_svm, epochs=nb_epochs
-    )
+    svm = btf.KernelSVM(kernel, param, lr=learning_rate, lambda_svm=lambda_svm)
     for i in range(len(datasets_y)):
         x_data = np.array(
             [item for sublist in dataset for item in sublist], dtype=np.float64
