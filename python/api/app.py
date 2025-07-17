@@ -205,7 +205,6 @@ async def training_mlp(
 
 @app.post("/train_svm")
 async def training_svm(
-    nb_epochs: int,
     param: float,
     learning_rate: float,
     filter_cat: List[str],
