@@ -1,5 +1,5 @@
 import os
-import numpy as np
+import random
 import shutil
 from fastapi import FastAPI, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -113,6 +113,7 @@ async def training_rbf(
     for i in range(len(dataset)):
         dataset_split = [[], []]
         dataset__split_test = [[], []]
+
         for j in range(len(dataset)):
             if j == i:
                 dataset_split[1].extend(dataset[j])
@@ -124,6 +125,15 @@ async def training_rbf(
                 dataset__split_test[1].extend(dataset_test[j])
             else:
                 dataset__split_test[0].extend(dataset_test[j])
+
+        n_pos = len(dataset_split[1])
+        n_neg = len(dataset_split[0])
+        if n_neg > n_pos:
+            random.shuffle(dataset_split[0])
+            dataset_split[0] = dataset_split[0][:n_pos]
+        elif n_pos > n_neg:
+            random.shuffle(dataset_split[1])
+            dataset_split[1] = dataset_split[1][:n_neg]
 
         now = datetime.now()
         r = btf.train_rbf(
@@ -137,13 +147,42 @@ async def training_rbf(
             f"train/mlp_{now.strftime('%Y-%m-%d_%H-%M-%S')}",
         )
         print(r)
-
         os.rename(
             "w_rbf.weight",
             f"rbf_{i}.weights",
         )
 
     return {"training": "OK"}
+
+
+@app.post("/predict_svm")
+async def predict_svm(file: UploadFile):
+    with open("temp.mp3", "wb") as f:
+        f.write(await file.read())
+
+    with open("dataset.txt", "r") as f:
+        cat = json.load(f)
+
+    data = DataManager.load_data("temp.mp3")
+    results = [0 for _ in range(len(cat))]
+    svm = btf.KernelSVM("rbf", 2.0, lr=0.1, lambda_svm=0.01)
+
+    for d in data:
+        array = btf.convert_matrix_to_array(d.tolist())
+        scores = []
+        files = sorted(
+            [f for f in os.listdir() if f.startswith("svm_") and f.endswith(".weights")]
+        )
+        for file in files:
+            svm.load_weights_from(file)
+            pred = svm.predict([array])[0]
+            scores.append(pred)
+
+        for i in range(len(scores)):
+            if scores[i] == 1:
+                results[i] += 1
+
+    return {"prediction": cat[results.index(max(results))]}
 
 
 @app.post("/predict_mlp")
@@ -236,23 +275,34 @@ async def training_svm(
     x_val = [item for sublist in dataset_test for item in sublist]
     y_val = [i for i, sublist in enumerate(dataset_test) for _ in sublist]
 
-    # Entraînement One-vs-All
     svm = btf.KernelSVM(kernel, param, lr=learning_rate, lambda_svm=lambda_svm)
     for i in range(len(datasets_y)):
         x_data = np.array(
             [item for sublist in dataset for item in sublist], dtype=np.float64
         )
         y_data = np.array(datasets_y[i], dtype=np.float64)
+        indices = np.arange(len(y_data))
+        np.random.shuffle(indices)
+        x_data = x_data[indices]
+        y_data = y_data[indices]
 
-        # Appliquer +1 / -1 aussi sur les labels de validation
+        idx_pos = [idx for idx, val in enumerate(y_data) if val == 1]
+        idx_neg = [idx for idx, val in enumerate(y_data) if val == -1]
+        min_len = min(len(idx_pos), len(idx_neg))
+        idx_pos = idx_pos[:min_len]
+        idx_neg = idx_neg[:min_len]
+        idx_balanced = idx_pos + idx_neg
+        x_data_balanced = x_data[idx_balanced]
+        y_data_balanced = y_data[idx_balanced]
+
         y_val_bin = [1 if label == i else -1 for label in y_val]
 
         svm.fit(
-            x_data.tolist(),
-            y_data.astype(int).tolist(),
+            x_data_balanced.tolist(),
+            y_data_balanced.astype(int).tolist(),
             f"svm_{i}.weights",
             x_val,
-            y_val_bin,  # Labels de validation pour la validation croisée
+            y_val_bin,
         )
 
     return {"training": "OK"}
