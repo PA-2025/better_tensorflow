@@ -7,13 +7,23 @@ pub fn convert_image_to_array(image: Vec<Vec<Vec<f32>>>) -> Vec<f32> {
 }
 
 pub fn sum(input_array: Vec<f32>, weights_array: Vec<f32>) -> f32 {
-    input_array.iter().zip(weights_array.iter()).map(|(x, w)| x * w).sum()
+    let mut sum = 0.0;
+    for (x, w) in input_array.iter().zip(weights_array.iter()) {
+        sum += x * w;
+    }
+    sum
 }
 
 pub fn multiply_matrix_vector(matrix: &Vec<Vec<f32>>, vector: &Vec<f32>) -> Vec<f32> {
-    matrix.iter()
-        .map(|row| row.iter().zip(vector.iter()).map(|(x, w)| x * w).sum())
-        .collect()
+    let mut result = Vec::with_capacity(matrix.len());
+    for row in matrix {
+        let mut sum = 0.0;
+        for (x, w) in row.iter().zip(vector.iter()) {
+            sum += x * w;
+        }
+        result.push(sum);
+    }
+    result
 }
 
 pub fn transpose(matrix: &Vec<Vec<f32>>) -> Vec<Vec<f32>> {

@@ -37,3 +37,8 @@ python/api/data/music_spec/
 # Output files
 debug.png
 results.csv
+
+*.zip
+*.weights
+*.onnx
+test_e2e/

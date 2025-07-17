@@ -1,8 +1,8 @@
+use crate::data_converter::{export_weights_svm, import_weights_svm};
 use ndarray::{Array1, Array2};
 use pyo3::prelude::*;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
-use crate::data_converter::{export_weights_svm, import_weights_svm};
 
 enum Kernel {
     RBF(f64),
@@ -45,7 +45,11 @@ impl KernelSVM {
         let kernel = match kernel_type {
             "rbf" => Kernel::RBF(param),
             "poly" => Kernel::Polynomial(param as u32),
-            _ => return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>("Invalid kernel")),
+            _ => {
+                return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+                    "Invalid kernel",
+                ))
+            }
         };
 
         Ok(Self {
@@ -69,13 +73,34 @@ impl KernelSVM {
         self.support_labels = support_labels;
     }
 
-    pub fn fit(&mut self, x: Vec<Vec<f64>>, y: Vec<i32>, path: &str, x_val: Option<Vec<Vec<f64>>>, y_val: Option<Vec<i32>>) {
-        let x = Array2::from_shape_vec((x.len(), x[0].len()), x.into_iter().flatten().collect()).unwrap();
-        let y = Array1::from_iter(y.iter().map(|&v| v as f64));
+    pub fn fit(
+        &mut self,
+        x: Vec<Vec<f64>>,
+        y: Vec<i32>,
+        path: &str,
+        x_val: Option<Vec<Vec<f64>>>,
+        y_val: Option<Vec<i32>>,
+    ) {
+        let mut x_arr = Vec::new();
+        for row in &x {
+            for &val in row {
+                x_arr.push(val);
+            }
+        }
+        let x = Array2::from_shape_vec((x.len(), x[0].len()), x_arr).unwrap();
+
+        let mut y_arr = vec![];
+        for &v in &y {
+            y_arr.push(v as f64);
+        }
+        let y = Array1::from(y_arr);
         let n = x.nrows();
 
         self.alpha = vec![0.0; n];
-        self.support_vectors = x.outer_iter().map(|row| row.to_owned()).collect();
+        self.support_vectors = vec![];
+        for row in x.outer_iter() {
+            self.support_vectors.push(row.to_owned());
+        }
         self.support_labels = y.to_vec();
 
         let mut indices: Vec<usize> = (0..n).collect();
@@ -103,8 +128,6 @@ impl KernelSVM {
             }
         }
 
-
-
         let (kernel_type, param) = match &self.kernel {
             Kernel::RBF(gamma) => ("rbf", *gamma),
             Kernel::Polynomial(degree) => ("poly", *degree as f64),
@@ -122,11 +145,15 @@ impl KernelSVM {
             self.lambda_svm,
         );
 
-
-        let accuracy = self.evaluate(
-            x.outer_iter().map(|v| v.to_vec()).collect(),
-            y.iter().map(|&v| v as i32).collect(),
-        );
+        let mut x_vec = vec![];
+        for v in x.outer_iter() {
+            x_vec.push(v.to_vec());
+        }
+        let mut y_vec = vec![];
+        for &v in y.iter() {
+            y_vec.push(v as i32);
+        }
+        let accuracy = self.evaluate(x_vec, y_vec);
         println!("Training accuracy: {:.2}%", accuracy * 100.0);
 
         if let (Some(xv), Some(yv)) = (x_val, y_val) {
@@ -139,32 +166,50 @@ impl KernelSVM {
         let x = Array2::from_shape_vec((x.len(), x[0].len()), x.into_iter().flatten().collect())
             .expect("Erreur dans le format des données d'entrée");
 
-        x.outer_iter()
-            .map(|xi| {
-                let mut sum = 0.0;
-                for (alpha_i, (xj, &yj)) in self.alpha.iter().zip(self.support_vectors.iter().zip(&self.support_labels)) {
-                    sum += alpha_i * yj * self.kernel.compute(&xi.to_owned(), xj);
-                }
-                if sum + self.bias >= 0.0 {
-                    1
-                } else {
-                    -1
-                }
-            })
-            .collect()
+        let mut predictions = Vec::new();
+        for xi in x.outer_iter() {
+            let mut sum = 0.0;
+            for (alpha_i, xj, yj) in
+                itertools::izip!(&self.alpha, &self.support_vectors, &self.support_labels)
+            {
+                sum += alpha_i * yj * self.kernel.compute(&xi.to_owned(), xj);
+            }
+            if sum + self.bias >= 0.0 {
+                predictions.push(1);
+            } else {
+                predictions.push(-1);
+            }
+        }
+        predictions
     }
 
     pub fn evaluate(&self, x: Vec<Vec<f64>>, y: Vec<i32>) -> f64 {
-        let x = Array2::from_shape_vec((x.len(), x[0].len()), x.into_iter().flatten().collect())
-            .expect("Erreur dans les données");
-        let y = Array1::from_iter(y.iter().map(|&v| v as f64));
+        let n = x.len();
+        let m = x[0].len();
+        let mut x_arr = Vec::new();
+        for row in &x {
+            for &val in row {
+                x_arr.push(val);
+            }
+        }
+        let x = Array2::from_shape_vec((n, m), x_arr).expect("Erreur dans les données");
+
+        let mut y_arr = Vec::new();
+        for &v in &y {
+            y_arr.push(v as f64);
+        }
+        let y = Array1::from(y_arr);
 
         let mut correct = 0;
         let total = x.nrows();
 
         for (xi, &yi) in x.outer_iter().zip(y.iter()) {
             let mut sum = 0.0;
-            for (alpha_i, (xj, &yj)) in self.alpha.iter().zip(self.support_vectors.iter().zip(&self.support_labels)) {
+            for (alpha_i, (xj, &yj)) in self
+                .alpha
+                .iter()
+                .zip(self.support_vectors.iter().zip(&self.support_labels))
+            {
                 sum += alpha_i * yj * self.kernel.compute(&xi.to_owned(), xj);
             }
 
