@@ -64,6 +64,11 @@ async def predict_all(file: UploadFile, weight_file: UploadFile):
             case "mlp":
                 array = btf.convert_matrix_to_array(d.tolist())
                 prediction = btf.predict_mlp(array, [], True, True)
+            case "ols":
+                array = btf.convert_matrix_to_array(d.tolist())
+                weights = btf.import_weights_ols()
+                prediction = btf.predict_ols([array], weights)[0]
+                prediction = int(round(prediction))
             case "svm":
                 array = btf.convert_matrix_to_array(d.tolist())
                 scores = []
@@ -255,6 +260,216 @@ async def training_svm(
     return {"training": "OK"}
 
 
+@app.post("/train_ols")
+async def training_ols(
+        filter_cat: List[str],
+        use_robust: bool = False,
+):
+    try:
+        # Vérifier que le dossier dataset existe
+        if not os.path.exists(DATASET_PATH):
+            return {"training": "ERROR", "error": f"Le dossier {DATASET_PATH} n'existe pas"}
+
+        print(f"Chargement du dataset depuis: {DATASET_PATH}")
+        print(f"Catégories filtrées: {filter_cat}")
+
+        # Charger le dataset
+        dataset, dataset_test = DataManager.load_dataset(DATASET_PATH, filter_cat)
+
+        if not dataset:
+            return {"training": "ERROR", "error": "Aucune donnée trouvée dans le dataset"}
+
+        print(f"Dataset chargé: {len(dataset)} catégories")
+        for i, cat in enumerate(dataset):
+            print(f"Catégorie {i}: {len(cat)} échantillons")
+
+        x_data = []
+        y_data = []
+
+        # Préparer les données pour l'entraînement
+        for i, category_data in enumerate(dataset):
+            for sample in category_data:
+                try:
+                    # Vérifier le type de sample et le convertir si nécessaire
+                    if isinstance(sample, list) and len(sample) > 0:
+                        if isinstance(sample[0], list):
+                            # sample est une matrice 2D
+                            array = btf.convert_matrix_to_array(sample)
+                        else:
+                            # sample est déjà un array 1D
+                            array = sample
+                    else:
+                        # sample est un scalaire ou vide
+                        array = [sample] if not isinstance(sample, list) else sample
+
+                    if array and len(array) > 0:  # Vérifier que l'array n'est pas vide
+                        x_data.append(array)
+                        y_data.append(float(i))
+                    else:
+                        print(f"Échantillon vide ignoré dans la catégorie {i}")
+
+                except Exception as e:
+                    print(f"Erreur lors du traitement d'un échantillon de la catégorie {i}: {e}")
+                    continue
+
+        if not x_data or not y_data:
+            return {"training": "ERROR", "error": "Aucune donnée valide trouvée après traitement"}
+
+        print(f"Données préparées: {len(x_data)} échantillons, {len(y_data)} labels")
+        print(f"Dimensions des features: {len(x_data[0]) if x_data else 0}")
+
+        # Entraîner le modèle
+        if use_robust:
+            print("Entraînement avec la version robuste...")
+            weights = btf.train_ols_robust(x_data, y_data)
+        else:
+            print("Entraînement avec la version standard...")
+            weights = btf.train_ols(x_data, y_data)
+
+        print(f"Entraînement terminé. Taille des poids: {len(weights)}")
+
+        return {
+            "training": "OK",
+            "weights_size": len(weights),
+            "samples_processed": len(x_data),
+            "categories": len(dataset)
+        }
+
+    except Exception as e:
+        print(f"Erreur durant l'entraînement OLS: {e}")
+        import traceback
+        traceback.print_exc()
+        return {"training": "ERROR", "error": str(e)}
+
+
+@app.post("/predict_ols")
+async def predict_ols(file: UploadFile):
+    with open("temp.mp3", "wb") as f:
+        f.write(await file.read())
+
+    data = DataManager.load_data("temp.mp3")
+    results = []
+
+    try:
+        weights = btf.import_weights_ols()
+    except Exception as e:
+        return {"error": f"Impossible de charger les poids OLS: {str(e)}"}
+
+    for d in data:
+        array = btf.convert_matrix_to_array(d)
+        prediction = btf.predict_ols([array], weights)[0]
+        prediction_class = int(round(prediction))
+        results.append(prediction_class)
+
+    with open("dataset.txt", "r") as f:
+        cat = json.load(f)
+
+    most_common_prediction = max(set(results), key=results.count)
+
+    if most_common_prediction >= len(cat):
+        most_common_prediction = len(cat) - 1
+    elif most_common_prediction < 0:
+        most_common_prediction = 0
+
+    print(f"OLS Results: {results}")
+    print(f"Most common prediction: {most_common_prediction}")
+
+    return {"prediction": cat[most_common_prediction]}
+
+
+@app.post("/train_ols_multiclass")
+async def training_ols_multiclass(
+        filter_cat: List[str],
+        use_robust: bool = False,
+):
+    dataset, dataset_test = DataManager.load_dataset(DATASET_PATH, filter_cat)
+    print(f"Dataset train size: {sum(len(cat) for cat in dataset)}")
+    print(f"Dataset test size: {sum(len(cat) for cat in dataset_test)}")
+
+    x_data = []
+    y_labels = []
+
+    for i, category_data in enumerate(dataset):
+        for sample in category_data:
+            # Correction : sample est déjà un array 1D, pas besoin de convert_matrix_to_array
+            # Si sample est une matrice 2D, utilisez convert_matrix_to_array
+            # Si sample est déjà un array 1D, utilisez-le directement
+            if isinstance(sample, list) and len(sample) > 0 and isinstance(sample[0], list):
+                # sample est une matrice 2D
+                array = btf.convert_matrix_to_array(sample)
+            else:
+                # sample est déjà un array 1D ou un scalaire
+                array = sample if isinstance(sample, list) else [sample]
+
+            x_data.append(array)
+            y_labels.append(i)
+
+    num_classes = len(dataset)
+
+    for file in os.listdir():
+        if file.startswith("ols_") and file.endswith(".weights"):
+            os.remove(file)
+
+    for class_idx in range(num_classes):
+        y_binary = [1.0 if label == class_idx else 0.0 for label in y_labels]
+
+        try:
+            if use_robust:
+                weights = btf.train_ols_robust(x_data, y_binary)
+            else:
+                weights = btf.train_ols(x_data, y_binary)
+
+            btf.export_weights_ols(weights, f"ols_{class_idx}.weights")
+
+        except Exception as e:
+            return {"training": "ERROR", "error": f"Erreur pour la classe {class_idx}: {str(e)}"}
+
+    return {"training": "OK", "num_classes": num_classes}
+
+
+@app.post("/predict_ols_multiclass")
+async def predict_ols_multiclass(file: UploadFile):
+    with open("temp.mp3", "wb") as f:
+        f.write(await file.read())
+
+    data = DataManager.load_data("temp.mp3")
+    results = []
+
+    weight_files = sorted([
+        f for f in os.listdir()
+        if f.startswith("ols_") and f.endswith(".weights")
+    ])
+
+    if not weight_files:
+        return {"error": "Aucun modèle OLS trouvé. Veuillez d'abord entraîner le modèle."}
+
+    for d in data:
+        array = btf.convert_matrix_to_array(d)
+        class_scores = []
+
+        for weight_file in weight_files:
+            try:
+                weights = btf.import_weights_ols_from_file(weight_file)
+                score = btf.predict_ols([array], weights)[0]
+                class_scores.append(score)
+            except Exception as e:
+                print(f"Erreur avec {weight_file}: {e}")
+                class_scores.append(0.0)
+
+        predicted_class = class_scores.index(max(class_scores))
+        results.append(predicted_class)
+
+    with open("dataset.txt", "r") as f:
+        cat = json.load(f)
+
+    most_common_prediction = max(set(results), key=results.count)
+
+    print(f"OLS Multiclass Results: {results}")
+    print(f"Most common prediction: {most_common_prediction}")
+
+    return {"prediction": cat[most_common_prediction]}
+
+
 @app.get("/get_results")
 def get_results():
     return {
@@ -266,7 +481,7 @@ def get_results():
 def get_results_data():
     return {
         "results": DatabaseManager.get_training_data()
-        + DatabaseManager.get_training_data_mongo()
+                   + DatabaseManager.get_training_data_mongo()
     }
 
 
