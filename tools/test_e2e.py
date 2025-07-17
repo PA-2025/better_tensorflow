@@ -137,7 +137,7 @@ class TestE2E:
         score_e2e = 0
         for dt in dataset_test:
             data = DataManager.load_data(dt[0])
-            results = []
+            results = [0 for _ in range(len(cat))]
             for d in data:
                 array = btf.convert_matrix_to_array(d.tolist())
 
@@ -153,19 +153,12 @@ class TestE2E:
                     svm.load_weights_from(file)
                     pred = svm.predict([array])[0]
                     scores.append(pred)
-                print(scores)
-                prediction = 0
                 for i in range(len(scores)):
                     if scores[i] == 1:
-                        prediction = i
-                        break
+                        results[i] += 1
 
-                results.append(prediction)
-
-            print(
-                f"Prediction for {dt[0]}: {results} -> {max(set(results), key=results.count)}"
-            )
-            if cat[int(max(set(results), key=results.count))] == dt[1]:
+            print(f"Prediction for {dt[0]}: {results} -> {results.index(max(results))}")
+            if cat[results.index(max(results))] == dt[1]:
                 score_e2e += 1
         print(f"Test MLP: {score_e2e}/{len(dataset_test)} correct predictions.")
         return score_e2e
@@ -176,7 +169,7 @@ class TestE2E:
         score_e2e = 0
         for dt in dataset_test:
             data = DataManager.load_data(dt[0])
-            results = []
+            results = [0 for _ in range(len(cat))]
             for d in data:
                 array = btf.convert_matrix_to_array(d.tolist())
                 scores = []
@@ -188,20 +181,16 @@ class TestE2E:
                     ]
                 )
                 for file in files:
-                    os.rename(file, "w_rbf.weight")
+                    shutil.copy(file, "w_rbf.weight")
                     pred = btf.predict_rbf(array, True, True)
                     scores.append(pred)
-                prediction = 0
+                print(scores)
                 for i in range(len(scores)):
                     if scores[i] == 1:
-                        prediction = i
-                        break
-                results.append(prediction)
+                        results[i] += 1
 
-            print(
-                f"Prediction for {dt[0]}: {results} -> {max(set(results), key=results.count)}"
-            )
-            if cat[int(max(set(results), key=results.count))] == dt[1]:
+            print(f"Prediction for {dt[0]}: {results} -> {results.index(max(results))}")
+            if cat[results.index(max(results))] == dt[1]:
                 score_e2e += 1
         print(f"Test MLP: {score_e2e}/{len(dataset_test)} correct predictions.")
         return score_e2e
@@ -251,8 +240,8 @@ if __name__ == "__main__":
     # print(f"Final ResNet Score: {score}")
     # score = test_e2e.test_mlp_binary()
     # print(f"Final MLP Binary Score: {score}")
-    score = test_e2e.test_svm()
+    # score = test_e2e.test_svm()
     # print(f"Final SVM Score: {score}")
-    # score = test_e2e.run_test_rbf()
+    score = test_e2e.run_test_rbf()
     # score = test_e2e.test_ols()
-    # print(f"Final RBF Score: {score}")
+    print(f"Final RBF Score: {score}")
