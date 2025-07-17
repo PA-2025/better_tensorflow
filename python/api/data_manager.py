@@ -67,7 +67,13 @@ class DataManager:
                 dataset_path, filter_categories, split
             )
         dataset = []
-        folders = os.listdir(dataset_path)
+        # folders = os.listdir(dataset_path)
+        folders = [
+            folder
+            for folder in os.listdir(dataset_path)
+            if os.path.isdir(os.path.join(dataset_path, folder))
+        ]
+
         f = open("dataset.txt", "w")
         json.dump(folders, f)
         f.close()
@@ -147,7 +153,12 @@ class DataManager:
     @staticmethod
     def find_dataset_categories(dataset_path: str) -> List[str]:
         categories = []
-        folders = os.listdir(dataset_path)
+        # folders = os.listdir(dataset_path)
+        folders = [
+            folder
+            for folder in os.listdir(dataset_path)
+            if os.path.isdir(os.path.join(dataset_path, folder))
+        ]
         for folder in folders:
             if os.path.isdir(f"{dataset_path}/{folder}"):
                 categories.append(folder)

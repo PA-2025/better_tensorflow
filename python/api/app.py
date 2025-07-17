@@ -9,6 +9,7 @@ import json
 from data_manager import DataManager
 from datetime import datetime
 from database_manager import DatabaseManager
+from tqdm import tqdm
 
 app = FastAPI()
 
@@ -262,13 +263,16 @@ async def training_svm(
 
 @app.post("/train_ols")
 async def training_ols(
-        filter_cat: List[str],
-        use_robust: bool = False,
+    filter_cat: List[str],
+    use_robust: bool = False,
 ):
     try:
         # Vérifier que le dossier dataset existe
         if not os.path.exists(DATASET_PATH):
-            return {"training": "ERROR", "error": f"Le dossier {DATASET_PATH} n'existe pas"}
+            return {
+                "training": "ERROR",
+                "error": f"Le dossier {DATASET_PATH} n'existe pas",
+            }
 
         print(f"Chargement du dataset depuis: {DATASET_PATH}")
         print(f"Catégories filtrées: {filter_cat}")
@@ -277,7 +281,10 @@ async def training_ols(
         dataset, dataset_test = DataManager.load_dataset(DATASET_PATH, filter_cat)
 
         if not dataset:
-            return {"training": "ERROR", "error": "Aucune donnée trouvée dans le dataset"}
+            return {
+                "training": "ERROR",
+                "error": "Aucune donnée trouvée dans le dataset",
+            }
 
         print(f"Dataset chargé: {len(dataset)} catégories")
         for i, cat in enumerate(dataset):
@@ -309,11 +316,16 @@ async def training_ols(
                         print(f"Échantillon vide ignoré dans la catégorie {i}")
 
                 except Exception as e:
-                    print(f"Erreur lors du traitement d'un échantillon de la catégorie {i}: {e}")
+                    print(
+                        f"Erreur lors du traitement d'un échantillon de la catégorie {i}: {e}"
+                    )
                     continue
 
         if not x_data or not y_data:
-            return {"training": "ERROR", "error": "Aucune donnée valide trouvée après traitement"}
+            return {
+                "training": "ERROR",
+                "error": "Aucune donnée valide trouvée après traitement",
+            }
 
         print(f"Données préparées: {len(x_data)} échantillons, {len(y_data)} labels")
         print(f"Dimensions des features: {len(x_data[0]) if x_data else 0}")
@@ -332,12 +344,13 @@ async def training_ols(
             "training": "OK",
             "weights_size": len(weights),
             "samples_processed": len(x_data),
-            "categories": len(dataset)
+            "categories": len(dataset),
         }
 
     except Exception as e:
         print(f"Erreur durant l'entraînement OLS: {e}")
         import traceback
+
         traceback.print_exc()
         return {"training": "ERROR", "error": str(e)}
 
@@ -379,8 +392,8 @@ async def predict_ols(file: UploadFile):
 
 @app.post("/train_ols_multiclass")
 async def training_ols_multiclass(
-        filter_cat: List[str],
-        use_robust: bool = False,
+    filter_cat: List[str],
+    use_robust: bool = False,
 ):
     dataset, dataset_test = DataManager.load_dataset(DATASET_PATH, filter_cat)
     print(f"Dataset train size: {sum(len(cat) for cat in dataset)}")
@@ -394,7 +407,11 @@ async def training_ols_multiclass(
             # Correction : sample est déjà un array 1D, pas besoin de convert_matrix_to_array
             # Si sample est une matrice 2D, utilisez convert_matrix_to_array
             # Si sample est déjà un array 1D, utilisez-le directement
-            if isinstance(sample, list) and len(sample) > 0 and isinstance(sample[0], list):
+            if (
+                isinstance(sample, list)
+                and len(sample) > 0
+                and isinstance(sample[0], list)
+            ):
                 # sample est une matrice 2D
                 array = btf.convert_matrix_to_array(sample)
             else:
@@ -410,19 +427,22 @@ async def training_ols_multiclass(
         if file.startswith("ols_") and file.endswith(".weights"):
             os.remove(file)
 
-    for class_idx in range(num_classes):
+    for class_idx in tqdm(range(num_classes)):
         y_binary = [1.0 if label == class_idx else 0.0 for label in y_labels]
 
         try:
             if use_robust:
-                weights = btf.train_ols_robust(x_data, y_binary)
+                btf.train_ols_robust(x_data, y_binary)
             else:
-                weights = btf.train_ols(x_data, y_binary)
-
-            btf.export_weights_ols(weights, f"ols_{class_idx}.weights")
+                btf.train_ols(x_data, y_binary)
+            os.rename("weights_ols.weights", f"ols_{class_idx}.weights")
+            print("test")
 
         except Exception as e:
-            return {"training": "ERROR", "error": f"Erreur pour la classe {class_idx}: {str(e)}"}
+            return {
+                "training": "ERROR",
+                "error": f"Erreur pour la classe {class_idx}: {str(e)}",
+            }
 
     return {"training": "OK", "num_classes": num_classes}
 
@@ -435,13 +455,14 @@ async def predict_ols_multiclass(file: UploadFile):
     data = DataManager.load_data("temp.mp3")
     results = []
 
-    weight_files = sorted([
-        f for f in os.listdir()
-        if f.startswith("ols_") and f.endswith(".weights")
-    ])
+    weight_files = sorted(
+        [f for f in os.listdir() if f.startswith("ols_") and f.endswith(".weights")]
+    )
 
     if not weight_files:
-        return {"error": "Aucun modèle OLS trouvé. Veuillez d'abord entraîner le modèle."}
+        return {
+            "error": "Aucun modèle OLS trouvé. Veuillez d'abord entraîner le modèle."
+        }
 
     for d in data:
         array = btf.convert_matrix_to_array(d)
@@ -481,7 +502,7 @@ def get_results():
 def get_results_data():
     return {
         "results": DatabaseManager.get_training_data()
-                   + DatabaseManager.get_training_data_mongo()
+        + DatabaseManager.get_training_data_mongo()
     }
 
 
