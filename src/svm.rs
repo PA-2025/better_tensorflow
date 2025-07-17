@@ -31,7 +31,6 @@ pub struct KernelSVM {
     bias: f64,
     lr: f64,
     lambda_svm: f64,
-    epochs: usize,
     kernel: Kernel,
     kernel_type: String,
     param: f64,
@@ -42,7 +41,7 @@ pub struct KernelSVM {
 #[pymethods]
 impl KernelSVM {
     #[new]
-    pub fn new(kernel_type: &str, param: f64, lr: f64, lambda_svm: f64, epochs: usize) -> PyResult<Self> {
+    pub fn new(kernel_type: &str, param: f64, lr: f64, lambda_svm: f64) -> PyResult<Self> {
         let kernel = match kernel_type {
             "rbf" => Kernel::RBF(param),
             "poly" => Kernel::Polynomial(param as u32),
@@ -54,7 +53,6 @@ impl KernelSVM {
             bias: 0.0,
             lr,
             lambda_svm,
-            epochs,
             kernel,
             kernel_type: kernel_type.to_string(),
             param,
@@ -82,30 +80,29 @@ impl KernelSVM {
 
         let mut indices: Vec<usize> = (0..n).collect();
 
-        for _ in 0..self.epochs {
-            indices.shuffle(&mut thread_rng());
+        indices.shuffle(&mut thread_rng());
 
-            for &i in &indices {
-                let xi = &self.support_vectors[i];
-                let yi = self.support_labels[i];
+        for &i in &indices {
+            let xi = &self.support_vectors[i];
+            let yi = self.support_labels[i];
 
-                let mut sum = 0.0;
-                for j in 0..n {
-                    let xj = &self.support_vectors[j];
-                    let yj = self.support_labels[j];
-                    sum += self.alpha[j] * yj * self.kernel.compute(xi, xj);
-                }
+            let mut sum = 0.0;
+            for j in 0..n {
+                let xj = &self.support_vectors[j];
+                let yj = self.support_labels[j];
+                sum += self.alpha[j] * yj * self.kernel.compute(xi, xj);
+            }
 
-                let margin = yi * (sum + self.bias);
+            let margin = yi * (sum + self.bias);
 
-                if margin < 1.0 {
-                    self.alpha[i] += self.lr * (1.0 - margin);
-                    self.bias += self.lr * yi;
-                } else {
-                    self.alpha[i] *= 1.0 - self.lr * self.lambda_svm;
-                }
+            if margin < 1.0 {
+                self.alpha[i] += self.lr * (1.0 - margin);
+                self.bias += self.lr * yi;
+            } else {
+                self.alpha[i] *= 1.0 - self.lr * self.lambda_svm;
             }
         }
+
 
 
         let (kernel_type, param) = match &self.kernel {
@@ -123,7 +120,6 @@ impl KernelSVM {
             param,
             self.lr,
             self.lambda_svm,
-            self.epochs,
         );
 
 

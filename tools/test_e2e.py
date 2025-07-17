@@ -132,7 +132,7 @@ class TestE2E:
 
     def test_svm(self):
         dataset_test = self.get_file_path(sys.argv[1])
-        svm = btf.KernelSVM("rbf", 2.0, lr=0.1, lambda_svm=0.01, epochs=200)
+        svm = btf.KernelSVM("rbf", 2.0, lr=0.1, lambda_svm=0.01)
         cat = self.get_cat()
         score_e2e = 0
         for dt in dataset_test:
@@ -251,8 +251,8 @@ if __name__ == "__main__":
     # print(f"Final ResNet Score: {score}")
     # score = test_e2e.test_mlp_binary()
     # print(f"Final MLP Binary Score: {score}")
-    # score = test_e2e.test_svm()
+    score = test_e2e.test_svm()
     # print(f"Final SVM Score: {score}")
     # score = test_e2e.run_test_rbf()
-    score = test_e2e.test_ols()
-    print(f"Final RBF Score: {score}")
+    # score = test_e2e.test_ols()
+    # print(f"Final RBF Score: {score}")

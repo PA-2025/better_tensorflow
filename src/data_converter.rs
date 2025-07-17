@@ -202,7 +202,6 @@ pub fn export_weights_svm(
     param: f64,
     lr: f64,
     lambda: f64,
-    epochs: usize,
 ) {
     let mut result_str = String::new();
 
@@ -210,7 +209,6 @@ pub fn export_weights_svm(
     result_str.push_str(&format!("param:{}\n", param));
     result_str.push_str(&format!("lr:{}\n", lr));
     result_str.push_str(&format!("lambda:{}\n", lambda));
-    result_str.push_str(&format!("epochs:{}\n", epochs));
     result_str.push_str(&format!("bias:{}\n", bias));
 
     result_str.push_str("alpha:[");

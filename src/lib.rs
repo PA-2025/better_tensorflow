@@ -11,7 +11,7 @@ mod math;
 mod matrix;
 mod mlp;
 mod rbf;
-mod svm_bis;
+mod svm;
 mod ols;
 
 #[pyfunction]
@@ -157,7 +157,7 @@ fn better_tensorflow(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(export_linear_weights, m)?)?;
     m.add_function(wrap_pyfunction!(train_rbf, m)?)?;
     m.add_function(wrap_pyfunction!(predict_rbf, m)?)?;
-    m.add_class::<svm_bis::KernelSVM>()?;
+    m.add_class::<svm::KernelSVM>()?;
 
     m.add_function(wrap_pyfunction!(train_ols, m)?)?;
     m.add_function(wrap_pyfunction!(predict_ols, m)?)?;
