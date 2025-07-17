@@ -138,6 +138,12 @@ fn train_ols_robust(x_data: Vec<Vec<f32>>, y_data: Vec<f32>) -> PyResult<Vec<f32
     ols::train_ols_robust(x_data, y_data)
 }
 
+#[pyfunction]
+fn import_weights_ols_from_file() -> PyResult<Vec<f32>> {
+    let weights = data_converter::import_weights_ols();
+    Ok(weights)
+}
+
 
 #[pymodule]
 fn better_tensorflow(m: &Bound<'_, PyModule>) -> PyResult<()> {
@@ -156,6 +162,7 @@ fn better_tensorflow(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(train_ols, m)?)?;
     m.add_function(wrap_pyfunction!(predict_ols, m)?)?;
     m.add_function(wrap_pyfunction!(train_ols_robust, m)?)?;
+    m.add_function(wrap_pyfunction!(import_weights_ols_from_file, m)?)?;
 
 
     Ok(())
