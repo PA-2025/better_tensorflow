@@ -192,18 +192,10 @@ async def predict_mlp(file: UploadFile):
 
     data = DataManager.load_data("temp.mp3")
     results = []
-    weights = [
-        "classical_hip-hop_jazz_mlp.weight",
-        "pop_rock_mlp.weight",
-        "techno_wajnberg_mlp.weight",
-    ]
     for d in data:
         array = btf.convert_matrix_to_array(d.tolist())
-        for i in range(len(weights)):
-            shutil.copy(weights[i], "w_mlp.weight")
-            prediction = btf.predict_mlp(array, [], True, False)
-            prediction = int(prediction) if i == 0 else int(prediction) + i * 2 + 1
-            results.append(prediction)
+        prediction = btf.predict_mlp(array, [], True, False)
+        results.append(prediction)
 
     with open("dataset.txt", "r") as f:
         cat = json.load(f)
@@ -254,7 +246,6 @@ async def training_svm(
 
     dataset, dataset_test = DataManager.load_dataset(DATASET_PATH, filter_cat)
 
-    # Création des labels One-vs-All
     datasets_y = []
     for k in range(len(dataset)):
         dataset_y = []
@@ -266,12 +257,10 @@ async def training_svm(
                     dataset_y.append(-1)
         datasets_y.append(dataset_y)
 
-    # Supprime les anciens fichiers de poids SVM
     for file in os.listdir():
         if file.startswith("svm_") and file.endswith(".weights"):
             os.remove(file)
 
-    # Prépare les données de validation
     x_val = [item for sublist in dataset_test for item in sublist]
     y_val = [i for i, sublist in enumerate(dataset_test) for _ in sublist]
 
@@ -314,7 +303,6 @@ async def training_ols(
     use_robust: bool = False,
 ):
     try:
-        # Vérifier que le dossier dataset existe
         if not os.path.exists(DATASET_PATH):
             return {
                 "training": "ERROR",
@@ -324,7 +312,6 @@ async def training_ols(
         print(f"Chargement du dataset depuis: {DATASET_PATH}")
         print(f"Catégories filtrées: {filter_cat}")
 
-        # Charger le dataset
         dataset, dataset_test = DataManager.load_dataset(DATASET_PATH, filter_cat)
 
         if not dataset:
@@ -340,23 +327,18 @@ async def training_ols(
         x_data = []
         y_data = []
 
-        # Préparer les données pour l'entraînement
         for i, category_data in enumerate(dataset):
             for sample in category_data:
                 try:
-                    # Vérifier le type de sample et le convertir si nécessaire
                     if isinstance(sample, list) and len(sample) > 0:
                         if isinstance(sample[0], list):
-                            # sample est une matrice 2D
                             array = btf.convert_matrix_to_array(sample)
                         else:
-                            # sample est déjà un array 1D
                             array = sample
                     else:
-                        # sample est un scalaire ou vide
                         array = [sample] if not isinstance(sample, list) else sample
 
-                    if array and len(array) > 0:  # Vérifier que l'array n'est pas vide
+                    if array and len(array) > 0:
                         x_data.append(array)
                         y_data.append(float(i))
                     else:
@@ -377,7 +359,6 @@ async def training_ols(
         print(f"Données préparées: {len(x_data)} échantillons, {len(y_data)} labels")
         print(f"Dimensions des features: {len(x_data[0]) if x_data else 0}")
 
-        # Entraîner le modèle
         if use_robust:
             print("Entraînement avec la version robuste...")
             weights = btf.train_ols_robust(x_data, y_data)
@@ -459,10 +440,8 @@ async def training_ols_multiclass(
                 and len(sample) > 0
                 and isinstance(sample[0], list)
             ):
-                # sample est une matrice 2D
                 array = btf.convert_matrix_to_array(sample)
             else:
-                # sample est déjà un array 1D ou un scalaire
                 array = sample if isinstance(sample, list) else [sample]
 
             x_data.append(array)

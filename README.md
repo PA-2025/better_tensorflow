@@ -1,14 +1,8 @@
-# 🎵 Music Classification Project
-
-[![Rust](https://img.shields.io/badge/Rust-🦀-orange)](https://www.rust-lang.org/)
-[![Python](https://img.shields.io/badge/Python-3.8+-blue)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-🚀-green)](https://fastapi.tiangolo.com/)
-
-A hybrid Rust + Python project for classifying music based on spectrograms using a FastAPI backend.
+# Music Classification Project
 
 ---
 
-## 🛠️ 1. Build the Rust Library
+## I - Build the Rust lib
 
 ```bash
 maturin build && pip install .
@@ -16,7 +10,7 @@ maturin build && pip install .
 
 ---
 
-## 🚀 2. Launch the FastAPI Server
+## II - Launch the FastAPI Server
 
 ### Install Python dependencies:
 
@@ -30,13 +24,13 @@ pip install -r python/requirements.txt
 fastapi dev python/api/app.py
 ```
 
-### 📘️ Swagger UI:
+### Swagger UI:
 
 * [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 
 ---
 
-## 🐛 3. Debugging Rust Code
+## III - Debugging Rust Code
 
 Enable detailed Rust error messages:
 
@@ -46,7 +40,7 @@ export RUST_BACKTRACE=1
 
 ---
 
-## 🎿 4. Add a Dataset
+## IV - Add a Dataset
 
 1. Check dataset version in `tools/scrapper/README.md`
 2. Download and unzip the dataset into:
@@ -63,7 +57,7 @@ python tools/soung_to_image.py <output_img_path> <input_audio_path>
 
 ---
 
-## ✅ 5. Run CSV-Based Model Tests
+## V - Run CSV-Based Model Tests
 
 1. Edit layer configurations in the script:
 
@@ -80,7 +74,7 @@ python tools/test_better_model.py 4 10000
 
 ---
 
-## 📦 6. Convert Dataset to MongoDB & Use It
+## VI - Convert Dataset to MongoDB & Use It
 
 1. Copy the environment file:
 
@@ -108,4 +102,9 @@ export USE_MONGO=1
 
 ---
 
+## VII - Run the e2e test
 
+```bash
+export PYTHONPATH=$(pwd)/python/api
+python tools/e2e_test.py
+```
