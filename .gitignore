@@ -1,26 +1,39 @@
+# macOS system files
+.DS_Store
+
+# IDEs and editors
 .idea/
 
+# Build and debug folders
 debug/
 target/
 
+# Rust backup files
 **/*.rs.bk
 *.pdb
 
+# Temp files
 temp.mp3
 temp.png
 
+# Python bytecode/cache
 python/api/__pycache__/
 python/better_tensorflow/__pycache__/
+
+# Model weights
 *.weight
 
+# Data and DB
 dataset.txt
-
 app_database.db
 
+# Dataset music folders
 python/api/data/music/
 python/api/data/music_spec/
 
+# Environment files
 .env
 
+# Output files
 debug.png
 results.csv
