@@ -3,10 +3,12 @@
 
 # IDEs and editors
 .idea/
+.vscode/
 
 # Build and debug folders
 debug/
 target/
+
 
 # Rust backup files
 **/*.rs.bk
@@ -22,6 +24,7 @@ python/better_tensorflow/__pycache__/
 
 # Model weights
 *.weight
+*.weights
 
 # Data and DB
 dataset.txt
@@ -33,12 +36,21 @@ python/api/data/music_spec/
 
 # Environment files
 .env
+*.env
 
 # Output files
 debug.png
 results.csv
-
 *.zip
-*.weights
 *.onnx
 test_e2e/
+
+# Compiled extensions
+*.so
+*.pyd
+*.dll
+
+# Virtual environments
+.venv/
+env/
+venv/
