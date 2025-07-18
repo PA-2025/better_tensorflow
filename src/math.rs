@@ -86,22 +86,22 @@ pub fn multiply_matrix_vector(matrix: &Vec<Vec<f32>>, vector: &Vec<f32>) -> Vec<
     result
 }
 
-/// inverse cas : Matrice singulière
+/// inverse cas -> Matrice singulière
 pub fn try_inverse(matrix: &Vec<Vec<f32>>) -> Option<Vec<Vec<f32>>> {
     let n = matrix.len();
     let mut result = vec![vec![0.0; n]; n];
     let mut a = matrix.clone();
 
-    // init matrice identité I
+
     for i in 0..n {
         result[i][i] = 1.0;
     }
 
-    // Gauss Jordan elimination & verification
+    // Gauss Jordan
     for i in 0..n {
         let pivot = a[i][i];
 
-        // Vérifier si le pivot est trop petit
+        // verif if pivot is S
         if pivot.abs() < 1e-8 {
             return None; // failed : matrice non inversible
         }
