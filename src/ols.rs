@@ -2,6 +2,7 @@ use crate::data_converter;
 use crate::math::{xtx, xty, inverse, multiply_matrix_vector};
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
+
 /// Trains linear regression weights: W = (X^T X)^(-1) X^T Y
 pub fn train_ols(x: Vec<Vec<f32>>, y: Vec<f32>) -> Vec<f32> {
     let xtx_ = xtx(&x);
@@ -16,7 +17,7 @@ pub fn train_ols(x: Vec<Vec<f32>>, y: Vec<f32>) -> Vec<f32> {
 
 
 
-/// Predicts values using trained weights
+/// Predicts values -> trained weights
 pub fn predict_ols(x: Vec<Vec<f32>>, weights: Vec<f32>) -> Vec<f32> {
     let mut predictions = Vec::new();
 

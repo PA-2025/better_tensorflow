@@ -306,7 +306,7 @@ async def training_ols(
         if not os.path.exists(DATASET_PATH):
             return {
                 "training": "ERROR",
-                "error": f"Le dossier {DATASET_PATH} n'existe pas",
+                "error": f"Le dossier {DATASET_PATH} n existe pas",
             }
 
         print(f"Chargement du dataset depuis: {DATASET_PATH}")
@@ -353,17 +353,17 @@ async def training_ols(
         if not x_data or not y_data:
             return {
                 "training": "ERROR",
-                "error": "Aucune donnée valide trouvée après traitement",
+                "error": "Aucune data valide trouvée après traitement",
             }
 
-        print(f"Données préparées: {len(x_data)} échantillons, {len(y_data)} labels")
+        print(f"data préparées: {len(x_data)} échantillons, {len(y_data)} labels")
         print(f"Dimensions des features: {len(x_data[0]) if x_data else 0}")
 
         if use_robust:
-            print("Entraînement avec la version robuste...")
+            print("Training with Robuste version ...")
             weights = btf.train_ols_robust(x_data, y_data)
         else:
-            print("Entraînement avec la version standard...")
+            print("Training ith standard version...")
             weights = btf.train_ols(x_data, y_data)
 
         print(f"Entraînement terminé. Taille des poids: {len(weights)}")
@@ -432,9 +432,6 @@ async def training_ols_multiclass(
 
     for i, category_data in enumerate(dataset):
         for sample in category_data:
-            # Correction : sample est déjà un array 1D, pas besoin de convert_matrix_to_array
-            # Si sample est une matrice 2D, utilisez convert_matrix_to_array
-            # Si sample est déjà un array 1D, utilisez-le directement
             if (
                 isinstance(sample, list)
                 and len(sample) > 0
