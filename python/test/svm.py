@@ -22,7 +22,7 @@ for x, pred in zip(X_test, preds_rbf):
     print(f"Entrée: {x} => Prédiction RBF: {pred}")
 
 # === SVM Polynomial ===
-svm_poly = KernelSVM("poly", 2, lr=0.1, lambda_svm=0.01)
+svm_poly = KernelSVM("poly", 3, lr=0.1, lambda_svm=0.01)
 print("=== SVM avec noyau Polynomial ===")
 svm_poly.fit(X_xor, y_xor, path="poly_xor.weights")
 print("=== Prédictions Polynomial ===")
