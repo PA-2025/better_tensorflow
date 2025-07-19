@@ -132,35 +132,35 @@ class TestE2E:
 
     def test_svm(self):
         dataset_test = self.get_file_path(sys.argv[1])
-        svm = btf.KernelSVM("rbf", 2.0, lr=0.1, lambda_svm=0.01)
         cat = self.get_cat()
         score_e2e = 0
+        svm = btf.KernelSVM("rbf", 30.0, lr=0.01, lambda_svm=0.001)  # Meilleurs paramètres
+
         for dt in dataset_test:
             data = DataManager.load_data(dt[0])
             results = [0 for _ in range(len(cat))]
+
             for d in data:
                 array = btf.convert_matrix_to_array(d.tolist())
-
                 scores = []
-                files = sorted(
-                    [
-                        f
-                        for f in os.listdir()
-                        if f.startswith("svm_") and f.endswith(".weights")
-                    ]
+
+                weight_files = sorted(
+                    [f for f in os.listdir() if f.startswith("svm_") and f.endswith(".weights")]
                 )
-                for file in files:
+
+                for i, file in enumerate(weight_files):
                     svm.load_weights_from(file)
-                    pred = svm.predict([array])[0]
-                    scores.append(pred)
-                for i in range(len(scores)):
-                    if scores[i] == 1:
+                    pred = svm.predict([array])[0]  # Prédit 1 ou -1
+                    if pred == 1:
                         results[i] += 1
 
-            print(f"Prediction for {dt[0]}: {results} -> {results.index(max(results))}")
-            if cat[results.index(max(results))] == dt[1]:
+            predicted_index = results.index(max(results))
+            print(f"Prediction for {dt[0]}: {results} -> {predicted_index}")
+
+            if cat[predicted_index] == dt[1]:
                 score_e2e += 1
-        print(f"Test MLP: {score_e2e}/{len(dataset_test)} correct predictions.")
+
+        print(f"Test SVM: {score_e2e}/{len(dataset_test)} correct predictions.")
         return score_e2e
 
     def run_test_rbf(self) -> int:
@@ -176,7 +176,7 @@ class TestE2E:
                 files = sorted(
                     [
                         f
-                        for f in os.listdir()
+                        for f in s.listdir()
                         if f.startswith("rbf") and f.endswith(".weights")
                     ]
                 )
@@ -240,8 +240,8 @@ if __name__ == "__main__":
     # print(f"Final ResNet Score: {score}")
     # score = test_e2e.test_mlp_binary()
     # print(f"Final MLP Binary Score: {score}")
-    # score = test_e2e.test_svm()
-    # print(f"Final SVM Score: {score}")
-    score = test_e2e.run_test_rbf()
+    score = test_e2e.test_svm()
+    print(f"Final SVM Score: {score}")
+    #score = test_e2e.run_test_rbf()
     # score = test_e2e.test_ols()
-    print(f"Final RBF Score: {score}")
+    #print(f"Final RBF Score: {score}")

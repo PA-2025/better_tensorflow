@@ -1,9 +1,8 @@
 kernel:poly
-param:2
+param:3
 lr:0.1
 lambda:0.01
-epochs:200
-bias:0.6
-alpha:[5.009381370970641,2.74613592325633,2.7494094736953625,2.061381417220757]
+bias:0
+alpha:[0.1252,0.1,0.242,0.19]
 support_vectors:[[0,0],[0,1],[1,0],[1,1],]
 support_labels:[-1,1,1,-1]
